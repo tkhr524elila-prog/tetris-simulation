@@ -2,7 +2,10 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no"
+  />
   <title>テトリス盤面シミュレーター</title>
   <style>
     :root {
@@ -27,7 +30,7 @@
 
       --cell-size: 28px;
       --cell-gap: 2px;
-      --radius: 16px;
+      --toolbar-height: 150px;
     }
 
     * {
@@ -41,45 +44,47 @@
       background: var(--bg);
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
     }
 
     body {
-      padding-bottom: max(158px, env(safe-area-inset-bottom));
+      padding-bottom: calc(var(--toolbar-height) + env(safe-area-inset-bottom) + 8px);
+      touch-action: manipulation;
     }
 
     .wrap {
       max-width: 980px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 10px;
     }
 
     h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 20px;
       line-height: 1.2;
     }
 
     .lead {
-      margin: 6px 0 12px;
+      margin: 6px 0 10px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.5;
     }
 
     .card {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 12px;
+      border-radius: 16px;
+      padding: 10px;
       box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     }
 
     .topbar {
       display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
+      grid-template-columns: 70px 1fr;
+      gap: 10px;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .piece-preview {
@@ -89,8 +94,8 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       background: #f8fafc;
-      min-width: 76px;
-      min-height: 76px;
+      min-width: 68px;
+      min-height: 68px;
       align-content: center;
       justify-content: center;
     }
@@ -101,8 +106,8 @@
     }
 
     .piece-cell {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       border-radius: 3px;
       border: 1px solid #dbe2ee;
       background: white;
@@ -111,16 +116,16 @@
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
     }
 
     .pill {
-      padding: 6px 10px;
+      padding: 5px 8px;
       background: #f8fafc;
       border: 1px solid var(--line);
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
       white-space: nowrap;
     }
@@ -131,10 +136,10 @@
 
     .message {
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-      margin: 0 0 10px;
-      min-height: 38px;
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 0 0 8px;
+      min-height: 32px;
     }
 
     .board-wrap {
@@ -164,13 +169,11 @@
       border-radius: 4px;
       background: var(--cell);
       display: block;
-      transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
       cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
     }
 
-    .manual {
-      background: var(--manual);
-    }
+    .manual { background: var(--manual); }
 
     .i { background: var(--i); }
     .o { background: var(--o); }
@@ -227,11 +230,8 @@
       100% { transform: translateY(0); }
     }
 
-    .details {
-      margin-top: 12px;
-    }
-
     details {
+      margin-top: 10px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: #fff;
@@ -240,8 +240,8 @@
 
     summary {
       cursor: pointer;
-      padding: 12px;
-      font-size: 13px;
+      padding: 10px 12px;
+      font-size: 12px;
       color: var(--text);
       font-weight: 600;
       list-style: none;
@@ -253,18 +253,7 @@
 
     .details-body {
       border-top: 1px solid var(--line);
-      padding: 12px;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 140px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 12px;
-      resize: vertical;
+      padding: 10px;
     }
 
     .buttons {
@@ -278,10 +267,11 @@
       background: white;
       color: var(--text);
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 10px 12px;
       cursor: pointer;
       font-size: 14px;
       min-height: 42px;
+      touch-action: manipulation;
     }
 
     button.active {
@@ -290,24 +280,36 @@
       border-color: #111827;
     }
 
-    .small {
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 12px;
+      resize: vertical;
+      margin-top: 10px;
+    }
+
+    .small {
+      font-size: 11px;
       color: var(--muted);
-      line-height: 1.6;
+      line-height: 1.55;
       margin-top: 8px;
     }
 
     .mobile-toolbar {
       position: fixed;
-      left: 10px;
-      right: 10px;
-      bottom: max(10px, env(safe-area-inset-bottom));
+      left: 8px;
+      right: 8px;
+      bottom: max(8px, env(safe-area-inset-bottom));
       display: grid;
       gap: 8px;
       background: rgba(255,255,255,0.97);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 10px;
+      border-radius: 16px;
+      padding: 8px;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
       backdrop-filter: blur(10px);
       z-index: 100;
@@ -323,7 +325,7 @@
     .row-7 { grid-template-columns: repeat(7, 1fr); }
 
     .mobile-toolbar button {
-      min-height: 42px;
+      min-height: 40px;
       font-size: 12px;
       padding: 8px 6px;
     }
@@ -332,37 +334,9 @@
       font-weight: 700;
     }
 
-    @media (max-width: 900px) {
-      :root {
-        --cell-size: 29px;
-      }
-
-      .wrap {
-        padding: 10px;
-      }
-
-      h1 {
-        font-size: 20px;
-      }
-
-      .topbar {
-        grid-template-columns: 70px 1fr;
-        gap: 10px;
-      }
-
-      .piece-cell {
-        width: 15px;
-        height: 15px;
-      }
-    }
-
     @media (min-width: 901px) {
       :root {
         --cell-size: 30px;
-      }
-
-      body {
-        padding-bottom: 148px;
       }
     }
   </style>
@@ -371,7 +345,7 @@
   <div class="wrap">
     <h1>テトリス盤面シミュレーター</h1>
     <p class="lead">
-      PCは盤面クリックで即落下、スマホは下の固定バーで操作できます。
+      PCは盤面クリックで即落下。スマホは下の固定バーで移動・回転・落下します。
     </p>
 
     <div class="card">
@@ -388,31 +362,29 @@
       </div>
 
       <p class="message" id="message">
-        PCはマウスで位置を見てクリックで即落下、スマホは下の操作バーで左右移動・回転・落下ができます。
+        PCはマウス移動で位置確認、クリックで即落下。スマホは下の操作バーで動かせます。
       </p>
 
       <div class="board-wrap">
         <div class="board" id="board"></div>
       </div>
 
-      <div class="details">
-        <details>
-          <summary>詳細操作・盤面データ</summary>
-          <div class="details-body">
-            <div class="buttons">
-              <button id="undoBtn" type="button">Undo</button>
-              <button id="resetBtn" type="button">Reset</button>
-              <button id="copyBtn" type="button">盤面コピー</button>
-              <button id="loadBtn" type="button">盤面読み込み</button>
-            </div>
+      <details>
+        <summary>詳細操作・盤面データ</summary>
+        <div class="details-body">
+          <div class="buttons">
+            <button id="undoBtn" type="button">Undo</button>
+            <button id="resetBtn" type="button">Reset</button>
+            <button id="copyBtn" type="button">盤面コピー</button>
+            <button id="loadBtn" type="button">盤面読み込み</button>
+          </div>
 
-            <div class="small">
-              PC: 左クリックで落下 / 右クリックでグレー設置 / Shift+クリックで消去<br />
-              スマホ: 下部バーでモード切替・左右移動・回転・落下
-            </div>
+          <div class="small">
+            PC: 左クリックで落下 / 右クリックでグレー設置 / Shift+クリックで消去<br />
+            スマホ: 下部バーで左右移動・回転・落下 / 盤面タップで列指定
+          </div>
 
-            <div style="margin-top:12px;">
-              <textarea id="boardText" placeholder="0000000000
+          <textarea id="boardText" placeholder="0000000000
 0000000000
 0000000000
 0000000000
@@ -432,15 +404,16 @@
 0000000000
 0000000000
 0000000000"></textarea>
-              <div class="small">読み込んだ 1 はグレーの補助ブロックとして扱います。</div>
-            </div>
+
+          <div class="small">
+            読み込んだ 1 はグレーの補助ブロックとして扱います。
           </div>
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
   </div>
 
-  <div class="mobile-toolbar">
+  <div class="mobile-toolbar" id="mobileToolbar">
     <div class="toolbar-row row-3">
       <button id="modeDropBtn" type="button" class="active">落下</button>
       <button id="modePaintBtn" type="button">グレー設置</button>
@@ -462,6 +435,8 @@
     const COLS = 10;
     const CLEAR_ANIMATION_MS = 520;
     const DROP_ANIMATION_MS = 220;
+    const HOLD_INITIAL_DELAY = 220;
+    const HOLD_REPEAT_MS = 65;
     const MANUAL = "manual";
     const isTouchLike = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
 
@@ -507,6 +482,10 @@
     let isDropAnimating = false;
     let currentMode = "drop";
 
+    let holdTimeout = null;
+    let holdInterval = null;
+
+    const docEl = document.documentElement;
     const boardEl = document.getElementById("board");
     const pieceButtonsEl = document.getElementById("pieceButtons");
     const piecePreviewEl = document.getElementById("piecePreview");
@@ -518,6 +497,7 @@
     const modeLabelEl = document.getElementById("modeLabel");
     const currentPieceLabel = document.getElementById("currentPieceLabel");
     const currentColLabel = document.getElementById("currentColLabel");
+    const mobileToolbar = document.getElementById("mobileToolbar");
 
     const rotateBtn = document.getElementById("rotateBtn");
     const moveLeftBtn = document.getElementById("moveLeftBtn");
@@ -673,17 +653,13 @@
       modePaintBtn.classList.toggle("active", mode === "paint");
       modeEraseBtn.classList.toggle("active", mode === "erase");
 
-      const labels = {
-        drop: "落下",
-        paint: "グレー設置",
-        erase: "消す"
-      };
+      const labels = { drop: "落下", paint: "グレー設置", erase: "消す" };
       modeLabelEl.textContent = labels[mode];
 
       if (mode === "drop") {
         setMessage(isTouchLike
-          ? "スマホでは下の左右移動・回転・落下で操作します。"
-          : "PCではマウスで位置を見て、クリックで即落下します。");
+          ? "スマホでは下の左右移動・回転・落下で操作します。盤面タップで列指定もできます。"
+          : "PCではマウス移動で位置を見て、クリックで即落下します。");
       } else if (mode === "paint") {
         setMessage("盤面クリック/タップでグレーの補助ブロックを置けます。");
       } else {
@@ -862,6 +838,7 @@
       renderPieceButtons();
       renderPiecePreview();
       renderBoard();
+      fitBoardToViewport();
     }
 
     function movePiece(delta) {
@@ -880,9 +857,67 @@
       renderAll();
     }
 
+    function stopHoldRepeat() {
+      if (holdTimeout) clearTimeout(holdTimeout);
+      if (holdInterval) clearInterval(holdInterval);
+      holdTimeout = null;
+      holdInterval = null;
+    }
+
+    function startHoldRepeat(fn) {
+      stopHoldRepeat();
+      fn();
+      holdTimeout = setTimeout(() => {
+        holdInterval = setInterval(fn, HOLD_REPEAT_MS);
+      }, HOLD_INITIAL_DELAY);
+    }
+
+    function bindHoldButton(el, fn) {
+      const start = (e) => {
+        if (currentMode !== "drop") return;
+        e.preventDefault();
+        startHoldRepeat(fn);
+      };
+      const stop = () => stopHoldRepeat();
+
+      el.addEventListener("pointerdown", start);
+      el.addEventListener("pointerup", stop);
+      el.addEventListener("pointercancel", stop);
+      el.addEventListener("pointerleave", stop);
+      el.addEventListener("lostpointercapture", stop);
+    }
+
+    function fitBoardToViewport() {
+      const viewportH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      const viewportW = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+
+      const toolbarRect = mobileToolbar.getBoundingClientRect();
+      const toolbarH = toolbarRect.height || 150;
+      docEl.style.setProperty("--toolbar-height", `${Math.ceil(toolbarH)}px`);
+
+      const topAreaEstimate = isTouchLike ? 170 : 185;
+      const extraSpacing = isTouchLike ? 30 : 24;
+
+      const usableHeight = Math.max(320, viewportH - toolbarH - topAreaEstimate - extraSpacing);
+      const usableWidth = Math.max(220, Math.min(viewportW, 980) - 36);
+
+      const sizeByHeight = Math.floor((usableHeight - 8 - (ROWS - 1) * 2) / ROWS);
+      const sizeByWidth = Math.floor((usableWidth - 16 - (COLS - 1) * 2) / COLS);
+
+      let nextSize = Math.min(sizeByHeight, sizeByWidth);
+
+      if (isTouchLike) {
+        nextSize = Math.max(18, Math.min(30, nextSize));
+      } else {
+        nextSize = Math.max(20, Math.min(34, nextSize));
+      }
+
+      docEl.style.setProperty("--cell-size", `${nextSize}px`);
+    }
+
     rotateBtn.addEventListener("click", rotatePiece);
-    moveLeftBtn.addEventListener("click", () => movePiece(-1));
-    moveRightBtn.addEventListener("click", () => movePiece(1));
+    bindHoldButton(moveLeftBtn, () => movePiece(-1));
+    bindHoldButton(moveRightBtn, () => movePiece(1));
     dropBtn.addEventListener("click", handleDrop);
 
     undoBtn.addEventListener("click", () => {
@@ -996,8 +1031,18 @@
       }
     });
 
+    document.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener("resize", fitBoardToViewport);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", fitBoardToViewport);
+    }
+
     renderAll();
     setMode("drop");
+    fitBoardToViewport();
   </script>
 </body>
 </html>
