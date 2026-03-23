@@ -11,8 +11,7 @@
       --line: #d6dbe7;
       --text: #1f2937;
       --muted: #6b7280;
-      --filled: #1f2937;
-      --ghost: rgba(59, 130, 246, 0.35);
+      --ghost: rgba(59, 130, 246, 0.28);
       --i: #22d3ee;
       --o: #facc15;
       --t: #c084fc;
@@ -20,6 +19,7 @@
       --z: #f87171;
       --j: #60a5fa;
       --l: #fb923c;
+      --fixed: #1f2937;
     }
 
     * { box-sizing: border-box; }
@@ -143,6 +143,7 @@
       border-radius: 16px;
       background: #e9edf5;
       width: fit-content;
+      user-select: none;
     }
 
     .cell {
@@ -152,9 +153,14 @@
       border-radius: 4px;
       background: white;
       cursor: pointer;
+      transition: transform 0.04s ease;
     }
 
-    .filled { background: var(--filled); }
+    .cell:hover {
+      transform: scale(1.02);
+    }
+
+    .filled-fixed { background: var(--fixed); }
     .ghost { background: var(--ghost); }
 
     .i { background: var(--i); }
@@ -193,6 +199,19 @@
       line-height: 1.5;
     }
 
+    .status {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--text);
+    }
+
     @media (max-width: 900px) {
       .layout {
         grid-template-columns: 1fr;
@@ -219,7 +238,7 @@
         </div>
 
         <div class="section">
-          <div class="label">2. 向き</div>
+          <div class="label">2. 向き / 編集</div>
           <div class="buttons">
             <button id="rotateBtn">回転</button>
             <button id="fillModeBtn" class="active">埋める</button>
@@ -252,8 +271,13 @@
       </div>
 
       <div class="card">
+        <div class="status">
+          <div>消去ライン数: <strong id="linesCount">0</strong></div>
+          <div>操作回数: <strong id="moveCount">0</strong></div>
+        </div>
+
         <p class="message" id="message">
-          盤面を編集して、ピースを選び、盤面上で列にマウスを乗せると着地プレビュー、クリックで実際に落下します。
+          列にマウスを乗せると着地プレビュー、クリックで実際に落下します。Shift+クリックか右クリックで盤面編集できます。
         </p>
 
         <div class="board-wrap">
@@ -261,9 +285,9 @@
         </div>
 
         <div class="tips">
-          <div class="tip">通常クリックで、その列にピースを落とします。</div>
-          <div class="tip">Shift + クリックで盤面を直接編集できます。</div>
-          <div class="tip">右クリックでも盤面の埋める・消すができます。</div>
+          <div class="tip">通常クリックで、その列にピースを実際に落とします。</div>
+          <div class="tip">1行すべて埋まると、その行は消えて上のブロックが落ちます。</div>
+          <div class="tip">Shift+クリック / 右クリックで盤面を直接編集できます。</div>
         </div>
       </div>
     </div>
@@ -299,6 +323,8 @@
     let rotation = 0;
     let editMode = "fill";
     let hoverCol = null;
+    let totalClearedLines = 0;
+    let moveCount = 0;
 
     const boardEl = document.getElementById("board");
     const pieceButtonsEl = document.getElementById("pieceButtons");
@@ -306,6 +332,9 @@
     const rotationTextEl = document.getElementById("rotationText");
     const messageEl = document.getElementById("message");
     const boardTextEl = document.getElementById("boardText");
+    const linesCountEl = document.getElementById("linesCount");
+    const moveCountEl = document.getElementById("moveCount");
+
     const rotateBtn = document.getElementById("rotateBtn");
     const fillModeBtn = document.getElementById("fillModeBtn");
     const eraseModeBtn = document.getElementById("eraseModeBtn");
@@ -351,7 +380,11 @@
     }
 
     function pushHistory() {
-      history.push(copyBoard(board));
+      history.push({
+        board: copyBoard(board),
+        totalClearedLines,
+        moveCount
+      });
       if (history.length > 100) history.shift();
     }
 
@@ -359,11 +392,12 @@
       for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) {
           if (!shape[r][c]) continue;
+
           const br = topRow + r;
           const bc = leftCol + c;
 
           if (bc < 0 || bc >= COLS || br >= ROWS) return false;
-          if (br >= 0 && targetBoard[br][bc]) return false;
+          if (br >= 0 && targetBoard[br][bc] !== 0) return false;
         }
       }
       return true;
@@ -384,6 +418,7 @@
           if (!shape[r][c]) continue;
           const br = row + r;
           const bc = col + c;
+
           if (br >= 0 && br < ROWS && bc >= 0 && bc < COLS) {
             next[br][bc] = value;
           }
@@ -403,7 +438,7 @@
     }
 
     function boardToText(targetBoard) {
-      return targetBoard.map(row => row.join("")).join("\n");
+      return targetBoard.map(row => row.map(v => (v ? 1 : 0)).join("")).join("\n");
     }
 
     function textToBoard(text) {
@@ -464,15 +499,20 @@
     function handleDrop(col) {
       const shape = currentShape();
       const row = findDropRow(board, shape, col);
+
       if (row === null) {
         setMessage("その列にはこの向きで置けません。");
         return;
       }
 
       pushHistory();
-      const placed = mergePiece(board, shape, row, col, 2);
-      const result = clearLines(placed.map(row => row.map(v => v === 2 ? 1 : v)));
+
+      board = mergePiece(board, shape, row, col, 1);
+      const result = clearLines(board);
       board = result.board;
+
+      moveCount += 1;
+      totalClearedLines += result.cleared;
 
       if (result.cleared > 0) {
         setMessage(`${selectedPiece} を落として ${result.cleared} ライン消去しました。`);
@@ -501,7 +541,7 @@
           cell.className = "cell";
 
           if (shown[r][c] === 1) {
-            cell.classList.add("filled");
+            cell.classList.add("filled-fixed");
           } else if (shown[r][c] === 2) {
             cell.classList.add(pieceClassMap[selectedPiece]);
           }
@@ -529,6 +569,8 @@
       }
 
       boardTextEl.value = boardToText(board);
+      linesCountEl.textContent = totalClearedLines;
+      moveCountEl.textContent = moveCount;
     }
 
     function renderModeButtons() {
@@ -560,7 +602,10 @@
 
     undoBtn.addEventListener("click", () => {
       if (!history.length) return;
-      board = history.pop();
+      const prev = history.pop();
+      board = prev.board;
+      totalClearedLines = prev.totalClearedLines;
+      moveCount = prev.moveCount;
       setMessage("1手戻しました。");
       renderAll();
     });
@@ -568,6 +613,8 @@
     resetBtn.addEventListener("click", () => {
       pushHistory();
       board = makeBoard();
+      totalClearedLines = 0;
+      moveCount = 0;
       setMessage("盤面をリセットしました。");
       renderAll();
     });
