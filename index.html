@@ -25,8 +25,9 @@
       --boardBg: #e9edf5;
       --gridLine: #cfd7e4;
 
-      --cell-size: 32px;
+      --cell-size: 28px;
       --cell-gap: 2px;
+      --radius: 16px;
     }
 
     * {
@@ -43,86 +44,55 @@
     }
 
     body {
-      padding-bottom: max(170px, env(safe-area-inset-bottom));
+      padding-bottom: max(158px, env(safe-area-inset-bottom));
     }
 
     .wrap {
-      max-width: 1200px;
+      max-width: 980px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 12px;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 24px;
+      margin: 0;
+      font-size: 22px;
       line-height: 1.2;
     }
 
     .lead {
-      margin: 0 0 16px;
+      margin: 6px 0 12px;
       color: var(--muted);
-      line-height: 1.6;
-      font-size: 14px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 340px 1fr;
-      gap: 16px;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .card {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 16px;
+      border-radius: var(--radius);
+      padding: 12px;
       box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     }
 
-    .section {
-      margin-bottom: 16px;
-    }
-
-    .section:last-child {
-      margin-bottom: 0;
-    }
-
-    .label {
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    button {
-      border: 1px solid var(--line);
-      background: white;
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 14px;
-      cursor: pointer;
-      font-size: 14px;
-      min-height: 42px;
-    }
-
-    button.active {
-      background: #111827;
-      color: #fff;
-      border-color: #111827;
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
     }
 
     .piece-preview {
       display: inline-grid;
       gap: 2px;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: #f8fafc;
+      min-width: 76px;
+      min-height: 76px;
+      align-content: center;
+      justify-content: center;
     }
 
     .piece-row {
@@ -131,45 +101,55 @@
     }
 
     .piece-cell {
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
       border: 1px solid #dbe2ee;
       background: white;
     }
 
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .pill strong {
+      color: var(--text);
+    }
+
     .message {
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 12px;
-      min-height: 44px;
-    }
-
-    .status {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .status strong {
-      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0 0 10px;
+      min-height: 38px;
     }
 
     .board-wrap {
       overflow: auto;
       -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
     }
 
     .board {
       display: grid;
       grid-template-columns: repeat(10, var(--cell-size));
       gap: var(--cell-gap);
-      padding: 10px;
-      border-radius: 16px;
+      padding: 8px;
+      border-radius: 14px;
       background: var(--boardBg);
       width: fit-content;
       user-select: none;
@@ -181,10 +161,11 @@
       width: var(--cell-size);
       height: var(--cell-size);
       border: 1px solid var(--gridLine);
-      border-radius: 5px;
+      border-radius: 4px;
       background: var(--cell);
       display: block;
       transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+      cursor: pointer;
     }
 
     .manual {
@@ -246,9 +227,38 @@
       100% { transform: translateY(0); }
     }
 
+    .details {
+      margin-top: 12px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 600;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .details-body {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+    }
+
     textarea {
       width: 100%;
-      min-height: 160px;
+      min-height: 140px;
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 12px;
@@ -257,53 +267,44 @@
       resize: vertical;
     }
 
-    .tips {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .tip {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .small {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-      line-height: 1.6;
-    }
-
-    .control-row {
+    .buttons {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
 
-    .pill {
-      padding: 6px 10px;
-      background: #f8fafc;
+    button {
       border: 1px solid var(--line);
-      border-radius: 999px;
+      background: white;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      min-height: 42px;
+    }
+
+    button.active {
+      background: #111827;
+      color: #fff;
+      border-color: #111827;
+    }
+
+    .small {
       font-size: 12px;
       color: var(--muted);
+      line-height: 1.6;
+      margin-top: 8px;
     }
 
     .mobile-toolbar {
       position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: max(12px, env(safe-area-inset-bottom));
+      left: 10px;
+      right: 10px;
+      bottom: max(10px, env(safe-area-inset-bottom));
       display: grid;
       gap: 8px;
-      background: rgba(255,255,255,0.96);
+      background: rgba(255,255,255,0.97);
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: 10px;
@@ -312,32 +313,19 @@
       z-index: 100;
     }
 
-    .toolbar-section {
-      display: grid;
-      gap: 8px;
-    }
-
     .toolbar-row {
       display: grid;
       gap: 8px;
     }
 
-    .toolbar-row.row-3 {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .row-3 { grid-template-columns: repeat(3, 1fr); }
+    .row-4 { grid-template-columns: repeat(4, 1fr); }
+    .row-7 { grid-template-columns: repeat(7, 1fr); }
 
-    .toolbar-row.row-4 {
-      grid-template-columns: repeat(4, 1fr);
-    }
-
-    .toolbar-row.row-7 {
-      grid-template-columns: repeat(7, 1fr);
-    }
-
-    .toolbar-row button {
-      min-height: 46px;
-      font-size: 13px;
-      padding: 10px 8px;
+    .mobile-toolbar button {
+      min-height: 42px;
+      font-size: 12px;
+      padding: 8px 6px;
     }
 
     .piece-mini {
@@ -346,21 +334,35 @@
 
     @media (max-width: 900px) {
       :root {
-        --cell-size: 34px;
+        --cell-size: 29px;
       }
 
-      .layout {
-        grid-template-columns: 1fr;
+      .wrap {
+        padding: 10px;
       }
 
-      .tips {
-        grid-template-columns: 1fr;
+      h1 {
+        font-size: 20px;
+      }
+
+      .topbar {
+        grid-template-columns: 70px 1fr;
+        gap: 10px;
+      }
+
+      .piece-cell {
+        width: 15px;
+        height: 15px;
       }
     }
 
     @media (min-width: 901px) {
+      :root {
+        --cell-size: 30px;
+      }
+
       body {
-        padding-bottom: 130px;
+        padding-bottom: 148px;
       }
     }
   </style>
@@ -369,40 +371,48 @@
   <div class="wrap">
     <h1>テトリス盤面シミュレーター</h1>
     <p class="lead">
-      下の固定操作バーで、ピース選択・左右移動・回転・落下まで完結できます。
-      盤面上には常に「今どこに落ちるか」のゴーストを表示します。
+      PCは盤面クリックで即落下、スマホは下の固定バーで操作できます。
     </p>
 
-    <div class="layout">
-      <div class="card">
-        <div class="section">
-          <div class="label">現在のピース</div>
-          <div id="piecePreview"></div>
-          <div class="small" id="rotationText">現在の向き: 0°</div>
+    <div class="card">
+      <div class="topbar">
+        <div id="piecePreview" class="piece-preview"></div>
+        <div class="meta">
+          <div class="pill">ピース: <strong id="currentPieceLabel">T</strong></div>
+          <div class="pill">向き: <strong id="rotationLabel">0°</strong></div>
+          <div class="pill">列: <strong id="currentColLabel">4</strong></div>
+          <div class="pill">モード: <strong id="modeLabel">落下</strong></div>
+          <div class="pill">消去: <strong id="linesCount">0</strong></div>
+          <div class="pill">操作: <strong id="moveCount">0</strong></div>
         </div>
+      </div>
 
-        <div class="section">
-          <div class="label">状態</div>
-          <div class="control-row">
-            <div class="pill">ピース: <strong id="currentPieceLabel">T</strong></div>
-            <div class="pill">列: <strong id="currentColLabel">4</strong></div>
-            <div class="pill">モード: <strong id="modeLabel">落下</strong></div>
-          </div>
-        </div>
+      <p class="message" id="message">
+        PCはマウスで位置を見てクリックで即落下、スマホは下の操作バーで左右移動・回転・落下ができます。
+      </p>
 
-        <div class="section">
-          <div class="label">操作</div>
-          <div class="buttons">
-            <button id="undoBtn" type="button">Undo</button>
-            <button id="resetBtn" type="button">Reset</button>
-            <button id="copyBtn" type="button">盤面コピー</button>
-            <button id="loadBtn" type="button">盤面読み込み</button>
-          </div>
-        </div>
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+      </div>
 
-        <div class="section">
-          <div class="label">盤面データ</div>
-          <textarea id="boardText" placeholder="0000000000
+      <div class="details">
+        <details>
+          <summary>詳細操作・盤面データ</summary>
+          <div class="details-body">
+            <div class="buttons">
+              <button id="undoBtn" type="button">Undo</button>
+              <button id="resetBtn" type="button">Reset</button>
+              <button id="copyBtn" type="button">盤面コピー</button>
+              <button id="loadBtn" type="button">盤面読み込み</button>
+            </div>
+
+            <div class="small">
+              PC: 左クリックで落下 / 右クリックでグレー設置 / Shift+クリックで消去<br />
+              スマホ: 下部バーでモード切替・左右移動・回転・落下
+            </div>
+
+            <div style="margin-top:12px;">
+              <textarea id="boardText" placeholder="0000000000
 0000000000
 0000000000
 0000000000
@@ -422,56 +432,29 @@
 0000000000
 0000000000
 0000000000"></textarea>
-          <div class="small">
-            読み込んだ 1 はグレーの補助ブロックとして扱います。
+              <div class="small">読み込んだ 1 はグレーの補助ブロックとして扱います。</div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="status">
-          <div>消去ライン数: <strong id="linesCount">0</strong></div>
-          <div>操作回数: <strong id="moveCount">0</strong></div>
-        </div>
-
-        <p class="message" id="message">
-          左右移動・回転をした結果が盤面上の白枠ゴーストに常時表示されます。
-        </p>
-
-        <div class="board-wrap">
-          <div class="board" id="board"></div>
-        </div>
-
-        <div class="tips">
-          <div class="tip">落下モードでは、盤面上に常時ゴーストを表示します。</div>
-          <div class="tip">グレー設置モードでは、盤面タップで1マスずつ補助ブロックを置けます。</div>
-          <div class="tip">消すモードでは、盤面タップで1マスずつ消せます。</div>
-        </div>
+        </details>
       </div>
     </div>
   </div>
 
   <div class="mobile-toolbar">
-    <div class="toolbar-section">
-      <div class="toolbar-row row-3">
-        <button id="modeDropBtn" type="button" class="active">落下</button>
-        <button id="modePaintBtn" type="button">グレー設置</button>
-        <button id="modeEraseBtn" type="button">消す</button>
-      </div>
+    <div class="toolbar-row row-3">
+      <button id="modeDropBtn" type="button" class="active">落下</button>
+      <button id="modePaintBtn" type="button">グレー設置</button>
+      <button id="modeEraseBtn" type="button">消す</button>
     </div>
 
-    <div class="toolbar-section">
-      <div class="toolbar-row row-4">
-        <button id="moveLeftBtn" type="button">←</button>
-        <button id="rotateBtn" type="button">回転</button>
-        <button id="moveRightBtn" type="button">→</button>
-        <button id="dropBtn" type="button">落下</button>
-      </div>
+    <div class="toolbar-row row-4">
+      <button id="moveLeftBtn" type="button">←</button>
+      <button id="rotateBtn" type="button">回転</button>
+      <button id="moveRightBtn" type="button">→</button>
+      <button id="dropBtn" type="button">落下</button>
     </div>
 
-    <div class="toolbar-section">
-      <div class="toolbar-row row-7" id="pieceButtons"></div>
-    </div>
+    <div class="toolbar-row row-7" id="pieceButtons"></div>
   </div>
 
   <script>
@@ -479,6 +462,8 @@
     const COLS = 10;
     const CLEAR_ANIMATION_MS = 520;
     const DROP_ANIMATION_MS = 220;
+    const MANUAL = "manual";
+    const isTouchLike = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
 
     const PIECES = {
       I: [[1, 1, 1, 1]],
@@ -510,8 +495,6 @@
       L: "ghost-l"
     };
 
-    const MANUAL = "manual";
-
     let board = makeBoard();
     let history = [];
     let selectedPiece = "T";
@@ -527,7 +510,7 @@
     const boardEl = document.getElementById("board");
     const pieceButtonsEl = document.getElementById("pieceButtons");
     const piecePreviewEl = document.getElementById("piecePreview");
-    const rotationTextEl = document.getElementById("rotationText");
+    const rotationLabel = document.getElementById("rotationLabel");
     const messageEl = document.getElementById("message");
     const boardTextEl = document.getElementById("boardText");
     const linesCountEl = document.getElementById("linesCount");
@@ -698,11 +681,13 @@
       modeLabelEl.textContent = labels[mode];
 
       if (mode === "drop") {
-        setMessage("落下モードです。左右移動・回転で位置を決めて、落下を押してください。");
+        setMessage(isTouchLike
+          ? "スマホでは下の左右移動・回転・落下で操作します。"
+          : "PCではマウスで位置を見て、クリックで即落下します。");
       } else if (mode === "paint") {
-        setMessage("グレー設置モードです。盤面タップで1マス置けます。");
+        setMessage("盤面クリック/タップでグレーの補助ブロックを置けます。");
       } else {
-        setMessage("消去モードです。盤面タップで1マス消せます。");
+        setMessage("盤面クリック/タップで1マス消せます。");
       }
 
       renderBoard();
@@ -746,8 +731,9 @@
 
       piecePreviewEl.innerHTML = "";
       piecePreviewEl.appendChild(wrap);
-      rotationTextEl.textContent = `現在の向き: ${rotation * 90}°`;
+
       currentPieceLabel.textContent = selectedPiece;
+      rotationLabel.textContent = `${rotation * 90}°`;
       currentColLabel.textContent = String(currentCol + 1);
     }
 
@@ -766,6 +752,13 @@
       board[r][c] = 0;
       setMessage("そのマスを消しました。");
       renderBoard();
+    }
+
+    async function handleDropAtCol(col) {
+      if (isAnimating) return;
+      currentCol = col;
+      clampCurrentCol();
+      await handleDrop();
     }
 
     async function handleDrop() {
@@ -952,7 +945,7 @@
     modeEraseBtn.addEventListener("click", () => setMode("erase"));
 
     boardEl.addEventListener("mousemove", (e) => {
-      if (isAnimating || currentMode !== "drop") return;
+      if (isAnimating || currentMode !== "drop" || isTouchLike) return;
       const cell = e.target.closest(".cell");
       if (!cell) return;
       const col = Number(cell.dataset.col);
@@ -968,14 +961,23 @@
       const r = Number(cell.dataset.row);
       const c = Number(cell.dataset.col);
 
+      if (e.shiftKey) {
+        eraseCell(r, c);
+        return;
+      }
+
       if (currentMode === "paint") {
         paintManualCell(r, c);
       } else if (currentMode === "erase") {
         eraseCell(r, c);
       } else {
-        currentCol = c;
-        clampCurrentCol();
-        renderAll();
+        if (isTouchLike) {
+          currentCol = c;
+          clampCurrentCol();
+          renderAll();
+        } else {
+          await handleDropAtCol(c);
+        }
       }
     });
 
