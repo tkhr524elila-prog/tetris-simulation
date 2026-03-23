@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>テトリス盤面シミュレーター</title>
   <style>
     :root {
@@ -24,52 +24,63 @@
       --cell: #ffffff;
       --boardBg: #e9edf5;
       --gridLine: #cfd7e4;
+
+      --cell-size: 32px;
+      --cell-gap: 2px;
     }
 
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      padding-bottom: max(96px, env(safe-area-inset-bottom));
     }
 
     .wrap {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 16px;
     }
 
     h1 {
       margin: 0 0 8px;
-      font-size: 28px;
+      font-size: 24px;
+      line-height: 1.2;
     }
 
     .lead {
-      margin: 0 0 20px;
+      margin: 0 0 16px;
       color: var(--muted);
       line-height: 1.6;
+      font-size: 14px;
     }
 
     .layout {
       display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 20px;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
     }
 
     .card {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 18px;
-      padding: 18px;
+      padding: 16px;
       box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     }
 
     .section {
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .section:last-child {
@@ -96,15 +107,12 @@
       padding: 10px 14px;
       cursor: pointer;
       font-size: 14px;
-    }
-
-    button:hover {
-      background: #f8fafc;
+      min-height: 42px;
     }
 
     button.active {
       background: #111827;
-      color: white;
+      color: #fff;
       border-color: #111827;
     }
 
@@ -135,14 +143,14 @@
       font-size: 14px;
       line-height: 1.6;
       margin-bottom: 12px;
-      min-height: 42px;
+      min-height: 44px;
     }
 
     .status {
       display: flex;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       font-size: 14px;
       color: var(--muted);
     }
@@ -153,27 +161,28 @@
 
     .board-wrap {
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .board {
       display: grid;
-      grid-template-columns: repeat(10, 28px);
-      gap: 2px;
+      grid-template-columns: repeat(10, var(--cell-size));
+      gap: var(--cell-gap);
       padding: 10px;
       border-radius: 16px;
       background: var(--boardBg);
       width: fit-content;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     .cell {
-      width: 28px;
-      height: 28px;
+      width: var(--cell-size);
+      height: var(--cell-size);
       border: 1px solid var(--gridLine);
-      border-radius: 4px;
+      border-radius: 5px;
       background: var(--cell);
-      cursor: pointer;
       display: block;
       transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
     }
@@ -201,7 +210,7 @@
       opacity: 1;
       border-width: 3px;
       box-sizing: border-box;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.95);
     }
 
     .ghost-i { border-color: var(--i); }
@@ -214,7 +223,7 @@
 
     .clearing {
       animation: clearFlash 260ms ease-in-out 2;
-      box-shadow: 0 0 14px rgba(255, 255, 255, 0.95);
+      box-shadow: 0 0 14px rgba(255,255,255,0.95);
       filter: brightness(2.25);
       position: relative;
       z-index: 2;
@@ -248,20 +257,14 @@
     }
 
     @keyframes dropBounce {
-      0% {
-        transform: translateY(-10px);
-      }
-      70% {
-        transform: translateY(2px);
-      }
-      100% {
-        transform: translateY(0);
-      }
+      0% { transform: translateY(-10px); }
+      70% { transform: translateY(2px); }
+      100% { transform: translateY(0); }
     }
 
     textarea {
       width: 100%;
-      min-height: 180px;
+      min-height: 160px;
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 12px;
@@ -271,7 +274,7 @@
     }
 
     .tips {
-      margin-top: 14px;
+      margin-top: 12px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
@@ -294,13 +297,44 @@
       line-height: 1.6;
     }
 
+    .mobile-toolbar {
+      display: none;
+    }
+
     @media (max-width: 900px) {
+      :root {
+        --cell-size: 34px;
+      }
+
       .layout {
         grid-template-columns: 1fr;
       }
 
       .tips {
         grid-template-columns: 1fr;
+      }
+
+      .mobile-toolbar {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 8px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+        backdrop-filter: blur(10px);
+        z-index: 100;
+      }
+
+      .mobile-toolbar button {
+        min-height: 46px;
+        font-size: 13px;
+        padding: 10px 8px;
       }
     }
   </style>
@@ -309,8 +343,8 @@
   <div class="wrap">
     <h1>テトリス盤面シミュレーター</h1>
     <p class="lead">
-      盤面を直接編集し、落とすテトリミノと向きを選んで、
-      「この列に落としたらどうなるか」を繰り返し確認できます。
+      iPhoneでは下のモード切替を使って、タップで盤面編集や落下ができます。
+      PCでは左クリックで落下、右クリックでグレー設置も使えます。
     </p>
 
     <div class="layout">
@@ -327,9 +361,8 @@
           </div>
           <p class="message" id="rotationText">現在の向き: 0°</p>
           <div class="small">
-            左クリック: ピースを落とす<br />
-            右クリック: そのマスをグレーで塗る<br />
-            Shift+左クリック / Shift+右クリック: そのマスを消す
+            PC: 左クリックで落下 / 右クリックでグレー設置 / Shift+クリックで消去<br />
+            iPhone: 下のモードを切り替えてタップ操作
           </div>
         </div>
 
@@ -380,10 +413,11 @@
         <div class="status">
           <div>消去ライン数: <strong id="linesCount">0</strong></div>
           <div>操作回数: <strong id="moveCount">0</strong></div>
+          <div>モード: <strong id="modeLabel">落下</strong></div>
         </div>
 
         <p class="message" id="message">
-          列にマウスを乗せると着地プレビュー、左クリックで実際に落下します。
+          タップまたはクリックで操作できます。iPhoneでは下のモード切替が便利です。
         </p>
 
         <div class="board-wrap">
@@ -391,12 +425,18 @@
         </div>
 
         <div class="tips">
-          <div class="tip">右クリックで1マスずつ盤面を作れます。</div>
-          <div class="tip">落としたテトリミノは、その色のまま固定されます。</div>
+          <div class="tip">手動設置した補助ブロックはグレーです。</div>
+          <div class="tip">落としたピースはその色のまま固定されます。</div>
           <div class="tip">プレビューは白塗り・色枠で表示されます。</div>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="mobile-toolbar">
+    <button id="modeDropBtn" type="button" class="active">落下</button>
+    <button id="modePaintBtn" type="button">グレー設置</button>
+    <button id="modeEraseBtn" type="button">消す</button>
   </div>
 
   <script>
@@ -447,6 +487,7 @@
     let isAnimating = false;
     let clearingRows = [];
     let isDropAnimating = false;
+    let currentMode = "drop";
 
     const boardEl = document.getElementById("board");
     const pieceButtonsEl = document.getElementById("pieceButtons");
@@ -456,12 +497,17 @@
     const boardTextEl = document.getElementById("boardText");
     const linesCountEl = document.getElementById("linesCount");
     const moveCountEl = document.getElementById("moveCount");
+    const modeLabelEl = document.getElementById("modeLabel");
 
     const rotateBtn = document.getElementById("rotateBtn");
     const undoBtn = document.getElementById("undoBtn");
     const resetBtn = document.getElementById("resetBtn");
     const copyBtn = document.getElementById("copyBtn");
     const loadBtn = document.getElementById("loadBtn");
+
+    const modeDropBtn = document.getElementById("modeDropBtn");
+    const modePaintBtn = document.getElementById("modePaintBtn");
+    const modeEraseBtn = document.getElementById("modeEraseBtn");
 
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -495,9 +541,7 @@
 
     function rotateNTimes(shape, n) {
       let out = shape.map(r => [...r]);
-      for (let i = 0; i < n; i++) {
-        out = rotateMatrix(out);
-      }
+      for (let i = 0; i < n; i++) out = rotateMatrix(out);
       out = normalizeTop(out);
       out = normalizeLeft(out);
       return out;
@@ -524,10 +568,8 @@
       for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) {
           if (!shape[r][c]) continue;
-
           const br = topRow + r;
           const bc = leftCol + c;
-
           if (bc < 0 || bc >= COLS || br >= ROWS) return false;
           if (br >= 0 && isFilledCell(targetBoard[br][bc])) return false;
         }
@@ -537,37 +579,29 @@
 
     function findDropRow(targetBoard, shape, col) {
       let row = -shape.length;
-      while (canPlace(targetBoard, shape, row + 1, col)) {
-        row++;
-      }
+      while (canPlace(targetBoard, shape, row + 1, col)) row++;
       return canPlace(targetBoard, shape, row, col) ? row : null;
     }
 
     function mergePiece(targetBoard, shape, row, col, value) {
       const next = copyBoard(targetBoard);
-
       for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) {
           if (!shape[r][c]) continue;
-
           const br = row + r;
           const bc = col + c;
-
           if (br >= 0 && br < ROWS && bc >= 0 && bc < COLS) {
             next[br][bc] = value;
           }
         }
       }
-
       return next;
     }
 
     function getFullRows(targetBoard) {
       const rows = [];
       for (let r = 0; r < ROWS; r++) {
-        if (targetBoard[r].every(cell => isFilledCell(cell))) {
-          rows.push(r);
-        }
+        if (targetBoard[r].every(cell => isFilledCell(cell))) rows.push(r);
       }
       return rows;
     }
@@ -580,18 +614,14 @@
     }
 
     function boardToText(targetBoard) {
-      return targetBoard
-        .map(row => row.map(v => (isFilledCell(v) ? 1 : 0)).join(""))
-        .join("\n");
+      return targetBoard.map(row => row.map(v => (isFilledCell(v) ? 1 : 0)).join("")).join("\n");
     }
 
     function textToBoard(text) {
       const cleaned = text.trim();
       if (!cleaned) throw new Error("盤面データが空です");
-
       const lines = cleaned.split(/\n+/).map(v => v.trim());
       if (lines.length !== ROWS) throw new Error(`${ROWS}行必要です`);
-
       return lines.map(line => {
         if (line.length !== COLS) throw new Error(`各行は${COLS}桁必要です`);
         return [...line].map(ch => (ch === "1" ? MANUAL : 0));
@@ -602,24 +632,40 @@
       messageEl.textContent = text;
     }
 
+    function setMode(mode) {
+      currentMode = mode;
+      modeDropBtn.classList.toggle("active", mode === "drop");
+      modePaintBtn.classList.toggle("active", mode === "paint");
+      modeEraseBtn.classList.toggle("active", mode === "erase");
+
+      const labels = {
+        drop: "落下",
+        paint: "グレー設置",
+        erase: "消す"
+      };
+      modeLabelEl.textContent = labels[mode];
+
+      if (mode === "drop") {
+        setMessage("落下モードです。タップした列にピースを落とします。");
+      } else if (mode === "paint") {
+        setMessage("グレー設置モードです。タップしたマスをグレーで埋めます。");
+      } else {
+        setMessage("消去モードです。タップしたマスを消します。");
+      }
+    }
+
     function renderPieceButtons() {
       pieceButtonsEl.innerHTML = "";
-
       Object.keys(PIECES).forEach(piece => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = piece;
-
-        if (piece === selectedPiece) {
-          btn.classList.add("active");
-        }
-
+        if (piece === selectedPiece) btn.classList.add("active");
         btn.addEventListener("click", () => {
           if (isAnimating) return;
           selectedPiece = piece;
           renderAll();
         });
-
         pieceButtonsEl.appendChild(btn);
       });
     }
@@ -632,16 +678,12 @@
       shape.forEach(row => {
         const rowEl = document.createElement("div");
         rowEl.className = "piece-row";
-
         row.forEach(cell => {
           const cellEl = document.createElement("div");
           cellEl.className = "piece-cell";
-          if (cell) {
-            cellEl.classList.add(pieceClassMap[selectedPiece]);
-          }
+          if (cell) cellEl.classList.add(pieceClassMap[selectedPiece]);
           rowEl.appendChild(cellEl);
         });
-
         wrap.appendChild(rowEl);
       });
 
@@ -679,12 +721,10 @@
       }
 
       pushHistory();
-
       board = mergePiece(board, shape, row, col, selectedPiece);
       moveCount += 1;
 
       const fullRows = getFullRows(board);
-
       if (fullRows.length === 0) {
         setMessage(`${selectedPiece} を落としました。`);
         renderBoard();
@@ -713,11 +753,9 @@
     }
 
     function getPreviewBoard() {
-      if (hoverCol === null || isAnimating) return board;
-
+      if (hoverCol === null || isAnimating || currentMode !== "drop") return board;
       const shape = currentShape();
       const row = findDropRow(board, shape, hoverCol);
-
       if (row === null) return board;
       return mergePiece(board, shape, row, hoverCol, `ghost-${selectedPiece}`);
     }
@@ -729,9 +767,7 @@
         const piece = value.replace("ghost-", "");
         return ghostClassMap[piece] || "";
       }
-      if (typeof value === "string") {
-        return pieceClassMap[value] || "";
-      }
+      if (typeof value === "string") return pieceClassMap[value] || "";
       return "";
     }
 
@@ -747,14 +783,11 @@
           cell.dataset.col = String(c);
 
           const className = getCellClass(shown[r][c]);
-          if (className) {
-            cell.classList.add(className);
-          }
+          if (className) cell.classList.add(className);
 
           if (clearingRows.includes(r) && isFilledCell(shown[r][c])) {
             cell.classList.add("clearing");
           }
-
           if (isDropAnimating && isFilledCell(shown[r][c])) {
             cell.classList.add("dropping");
           }
@@ -774,6 +807,18 @@
       renderBoard();
     }
 
+    async function handleCellAction(r, c) {
+      if (currentMode === "paint") {
+        paintManualCell(r, c);
+      } else if (currentMode === "erase") {
+        eraseCell(r, c);
+      } else {
+        hoverCol = c;
+        renderBoard();
+        await handleDrop(c);
+      }
+    }
+
     rotateBtn.addEventListener("click", () => {
       if (isAnimating) return;
       rotation = (rotation + 1) % 4;
@@ -782,7 +827,6 @@
 
     undoBtn.addEventListener("click", () => {
       if (isAnimating || !history.length) return;
-
       const prev = history.pop();
       board = prev.board;
       totalClearedLines = prev.totalClearedLines;
@@ -790,7 +834,6 @@
       hoverCol = null;
       clearingRows = [];
       isDropAnimating = false;
-
       setMessage("1手戻しました。");
       renderBoard();
     });
@@ -804,7 +847,6 @@
       hoverCol = null;
       clearingRows = [];
       isDropAnimating = false;
-
       setMessage("盤面をリセットしました。");
       renderBoard();
     });
@@ -812,7 +854,6 @@
     copyBtn.addEventListener("click", async () => {
       const text = boardToText(board);
       boardTextEl.value = text;
-
       try {
         await navigator.clipboard.writeText(text);
         setMessage("盤面データをコピーしました。");
@@ -837,11 +878,14 @@
       }
     });
 
+    modeDropBtn.addEventListener("click", () => setMode("drop"));
+    modePaintBtn.addEventListener("click", () => setMode("paint"));
+    modeEraseBtn.addEventListener("click", () => setMode("erase"));
+
     boardEl.addEventListener("mousemove", (e) => {
-      if (isAnimating) return;
+      if (isAnimating || currentMode !== "drop") return;
       const cell = e.target.closest(".cell");
       if (!cell) return;
-
       const col = Number(cell.dataset.col);
       if (hoverCol !== col) {
         hoverCol = col;
@@ -864,9 +908,10 @@
 
       if (e.shiftKey) {
         eraseCell(r, c);
-      } else {
-        await handleDrop(c);
+        return;
       }
+
+      await handleCellAction(r, c);
     });
 
     boardEl.addEventListener("contextmenu", (e) => {
@@ -886,6 +931,7 @@
     });
 
     renderAll();
+    setMode("drop");
   </script>
 </body>
 </html>
