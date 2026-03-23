@@ -12,6 +12,7 @@
       --text: #1f2937;
       --muted: #6b7280;
       --ghost: rgba(59, 130, 246, 0.28);
+
       --i: #22d3ee;
       --o: #facc15;
       --t: #c084fc;
@@ -19,10 +20,15 @@
       --z: #f87171;
       --j: #60a5fa;
       --l: #fb923c;
+
       --fixed: #1f2937;
+      --cell: #ffffff;
+      --boardBg: #e9edf5;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -129,6 +135,20 @@
       font-size: 14px;
       line-height: 1.6;
       margin-bottom: 12px;
+      min-height: 42px;
+    }
+
+    .status {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--text);
     }
 
     .board-wrap {
@@ -141,9 +161,10 @@
       gap: 2px;
       padding: 10px;
       border-radius: 16px;
-      background: #e9edf5;
+      background: var(--boardBg);
       width: fit-content;
       user-select: none;
+      -webkit-user-select: none;
     }
 
     .cell {
@@ -151,17 +172,18 @@
       height: 28px;
       border: 1px solid #cfd7e4;
       border-radius: 4px;
-      background: white;
+      background: var(--cell);
       cursor: pointer;
-      transition: transform 0.04s ease;
+      display: block;
     }
 
-    .cell:hover {
-      transform: scale(1.02);
+    .filled-fixed {
+      background: var(--fixed);
     }
 
-    .filled-fixed { background: var(--fixed); }
-    .ghost { background: var(--ghost); }
+    .ghost {
+      background: var(--ghost);
+    }
 
     .i { background: var(--i); }
     .o { background: var(--o); }
@@ -199,23 +221,18 @@
       line-height: 1.5;
     }
 
-    .status {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-      font-size: 14px;
+    .small {
+      font-size: 12px;
       color: var(--muted);
-    }
-
-    .status strong {
-      color: var(--text);
+      margin-top: 8px;
+      line-height: 1.5;
     }
 
     @media (max-width: 900px) {
       .layout {
         grid-template-columns: 1fr;
       }
+
       .tips {
         grid-template-columns: 1fr;
       }
@@ -240,9 +257,9 @@
         <div class="section">
           <div class="label">2. 向き / 編集</div>
           <div class="buttons">
-            <button id="rotateBtn">回転</button>
-            <button id="fillModeBtn" class="active">埋める</button>
-            <button id="eraseModeBtn">消す</button>
+            <button id="rotateBtn" type="button">回転</button>
+            <button id="fillModeBtn" type="button" class="active">埋める</button>
+            <button id="eraseModeBtn" type="button">消す</button>
           </div>
           <p class="message" id="rotationText">現在の向き: 0°</p>
         </div>
@@ -255,10 +272,14 @@
         <div class="section">
           <div class="label">4. 操作</div>
           <div class="buttons">
-            <button id="undoBtn">Undo</button>
-            <button id="resetBtn">Reset</button>
-            <button id="copyBtn">盤面コピー</button>
-            <button id="loadBtn">盤面読み込み</button>
+            <button id="undoBtn" type="button">Undo</button>
+            <button id="resetBtn" type="button">Reset</button>
+            <button id="copyBtn" type="button">盤面コピー</button>
+            <button id="loadBtn" type="button">盤面読み込み</button>
+          </div>
+          <div class="small">
+            通常クリック: ピースを落とす<br />
+            Shift+クリック / 右クリック: 盤面を直接編集
           </div>
         </div>
 
@@ -266,7 +287,24 @@
           <div class="label">5. 盤面データ</div>
           <textarea id="boardText" placeholder="0000000000
 0000000000
-... 20行"></textarea>
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000"></textarea>
         </div>
       </div>
 
@@ -277,7 +315,7 @@
         </div>
 
         <p class="message" id="message">
-          列にマウスを乗せると着地プレビュー、クリックで実際に落下します。Shift+クリックか右クリックで盤面編集できます。
+          列にマウスを乗せると着地プレビュー、クリックで実際に落下します。
         </p>
 
         <div class="board-wrap">
@@ -298,13 +336,13 @@
     const COLS = 10;
 
     const PIECES = {
-      I: [[1,1,1,1]],
-      O: [[1,1],[1,1]],
-      T: [[0,1,0],[1,1,1]],
-      S: [[0,1,1],[1,1,0]],
-      Z: [[1,1,0],[0,1,1]],
-      J: [[1,0,0],[1,1,1]],
-      L: [[0,0,1],[1,1,1]]
+      I: [[1, 1, 1, 1]],
+      O: [[1, 1], [1, 1]],
+      T: [[0, 1, 0], [1, 1, 1]],
+      S: [[0, 1, 1], [1, 1, 0]],
+      Z: [[1, 1, 0], [0, 1, 1]],
+      J: [[1, 0, 0], [1, 1, 1]],
+      L: [[0, 0, 1], [1, 1, 1]]
     };
 
     const pieceClassMap = {
@@ -356,7 +394,9 @@
     }
 
     function normalizeTop(shape) {
-      while (shape.length && shape[0].every(v => v === 0)) shape = shape.slice(1);
+      while (shape.length && shape[0].every(v => v === 0)) {
+        shape = shape.slice(1);
+      }
       return shape;
     }
 
@@ -369,7 +409,9 @@
 
     function rotateNTimes(shape, n) {
       let out = shape.map(r => [...r]);
-      for (let i = 0; i < n; i++) out = rotateMatrix(out);
+      for (let i = 0; i < n; i++) {
+        out = rotateMatrix(out);
+      }
       out = normalizeTop(out);
       out = normalizeLeft(out);
       return out;
@@ -385,7 +427,9 @@
         totalClearedLines,
         moveCount
       });
-      if (history.length > 100) history.shift();
+      if (history.length > 100) {
+        history.shift();
+      }
     }
 
     function canPlace(targetBoard, shape, topRow, leftCol) {
@@ -413,9 +457,11 @@
 
     function mergePiece(targetBoard, shape, row, col, value) {
       const next = copyBoard(targetBoard);
+
       for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) {
           if (!shape[r][c]) continue;
+
           const br = row + r;
           const bc = col + c;
 
@@ -424,6 +470,7 @@
           }
         }
       }
+
       return next;
     }
 
@@ -431,6 +478,7 @@
       const remain = targetBoard.filter(row => row.some(cell => cell === 0));
       const cleared = ROWS - remain.length;
       const top = Array.from({ length: cleared }, () => Array(COLS).fill(0));
+
       return {
         board: [...top, ...remain],
         cleared
@@ -438,15 +486,21 @@
     }
 
     function boardToText(targetBoard) {
-      return targetBoard.map(row => row.map(v => (v ? 1 : 0)).join("")).join("\n");
+      return targetBoard
+        .map(row => row.map(v => (v ? 1 : 0)).join(""))
+        .join("\n");
     }
 
     function textToBoard(text) {
-      const lines = text.trim().split(/\n+/).map(v => v.trim());
+      const cleaned = text.trim();
+      if (!cleaned) throw new Error("盤面データが空です");
+
+      const lines = cleaned.split(/\n+/).map(v => v.trim());
       if (lines.length !== ROWS) throw new Error(`${ROWS}行必要です`);
+
       return lines.map(line => {
         if (line.length !== COLS) throw new Error(`各行は${COLS}桁必要です`);
-        return [...line].map(ch => ch === "1" ? 1 : 0);
+        return [...line].map(ch => (ch === "1" ? 1 : 0));
       });
     }
 
@@ -456,14 +510,21 @@
 
     function renderPieceButtons() {
       pieceButtonsEl.innerHTML = "";
+
       Object.keys(PIECES).forEach(piece => {
         const btn = document.createElement("button");
+        btn.type = "button";
         btn.textContent = piece;
-        if (piece === selectedPiece) btn.classList.add("active");
+
+        if (piece === selectedPiece) {
+          btn.classList.add("active");
+        }
+
         btn.addEventListener("click", () => {
           selectedPiece = piece;
           renderAll();
         });
+
         pieceButtonsEl.appendChild(btn);
       });
     }
@@ -476,12 +537,16 @@
       shape.forEach(row => {
         const rowEl = document.createElement("div");
         rowEl.className = "piece-row";
+
         row.forEach(cell => {
           const cellEl = document.createElement("div");
           cellEl.className = "piece-cell";
-          if (cell) cellEl.classList.add(pieceClassMap[selectedPiece]);
+          if (cell) {
+            cellEl.classList.add(pieceClassMap[selectedPiece]);
+          }
           rowEl.appendChild(cellEl);
         });
+
         wrap.appendChild(rowEl);
       });
 
@@ -493,7 +558,7 @@
     function handleEdit(r, c) {
       pushHistory();
       board[r][c] = editMode === "fill" ? 1 : 0;
-      renderAll();
+      renderBoard();
     }
 
     function handleDrop(col) {
@@ -520,25 +585,29 @@
         setMessage(`${selectedPiece} を落としました。`);
       }
 
-      renderAll();
+      renderBoard();
     }
 
-    function previewBoard() {
+    function getPreviewBoard() {
       if (hoverCol === null) return board;
+
       const shape = currentShape();
       const row = findDropRow(board, shape, hoverCol);
+
       if (row === null) return board;
       return mergePiece(board, shape, row, hoverCol, 2);
     }
 
     function renderBoard() {
       boardEl.innerHTML = "";
-      const shown = previewBoard();
+      const shown = getPreviewBoard();
 
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
-          const cell = document.createElement("button");
+          const cell = document.createElement("div");
           cell.className = "cell";
+          cell.dataset.row = String(r);
+          cell.dataset.col = String(c);
 
           if (shown[r][c] === 1) {
             cell.classList.add("filled-fixed");
@@ -546,31 +615,13 @@
             cell.classList.add(pieceClassMap[selectedPiece]);
           }
 
-          cell.addEventListener("mouseenter", () => {
-            hoverCol = c;
-            renderBoard();
-          });
-
-          cell.addEventListener("click", (e) => {
-            if (e.shiftKey) {
-              handleEdit(r, c);
-            } else {
-              handleDrop(c);
-            }
-          });
-
-          cell.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
-            handleEdit(r, c);
-          });
-
           boardEl.appendChild(cell);
         }
       }
 
       boardTextEl.value = boardToText(board);
-      linesCountEl.textContent = totalClearedLines;
-      moveCountEl.textContent = moveCount;
+      linesCountEl.textContent = String(totalClearedLines);
+      moveCountEl.textContent = String(moveCount);
     }
 
     function renderModeButtons() {
@@ -593,21 +644,25 @@
     fillModeBtn.addEventListener("click", () => {
       editMode = "fill";
       renderModeButtons();
+      setMessage("埋めるモードです。Shift+クリックか右クリックで編集できます。");
     });
 
     eraseModeBtn.addEventListener("click", () => {
       editMode = "erase";
       renderModeButtons();
+      setMessage("消すモードです。Shift+クリックか右クリックで編集できます。");
     });
 
     undoBtn.addEventListener("click", () => {
       if (!history.length) return;
+
       const prev = history.pop();
       board = prev.board;
       totalClearedLines = prev.totalClearedLines;
       moveCount = prev.moveCount;
+
       setMessage("1手戻しました。");
-      renderAll();
+      renderBoard();
     });
 
     resetBtn.addEventListener("click", () => {
@@ -615,13 +670,16 @@
       board = makeBoard();
       totalClearedLines = 0;
       moveCount = 0;
+      hoverCol = null;
+
       setMessage("盤面をリセットしました。");
-      renderAll();
+      renderBoard();
     });
 
     copyBtn.addEventListener("click", async () => {
       const text = boardToText(board);
       boardTextEl.value = text;
+
       try {
         await navigator.clipboard.writeText(text);
         setMessage("盤面データをコピーしました。");
@@ -635,16 +693,53 @@
         const parsed = textToBoard(boardTextEl.value);
         pushHistory();
         board = parsed;
+        hoverCol = null;
         setMessage("盤面を読み込みました。");
-        renderAll();
+        renderBoard();
       } catch (e) {
         setMessage(`読み込み失敗: ${e.message}`);
+      }
+    });
+
+    boardEl.addEventListener("mousemove", (e) => {
+      const cell = e.target.closest(".cell");
+      if (!cell) return;
+
+      const col = Number(cell.dataset.col);
+      if (hoverCol !== col) {
+        hoverCol = col;
+        renderBoard();
       }
     });
 
     boardEl.addEventListener("mouseleave", () => {
       hoverCol = null;
       renderBoard();
+    });
+
+    boardEl.addEventListener("click", (e) => {
+      const cell = e.target.closest(".cell");
+      if (!cell) return;
+
+      const r = Number(cell.dataset.row);
+      const c = Number(cell.dataset.col);
+
+      if (e.shiftKey) {
+        handleEdit(r, c);
+      } else {
+        handleDrop(c);
+      }
+    });
+
+    boardEl.addEventListener("contextmenu", (e) => {
+      const cell = e.target.closest(".cell");
+      if (!cell) return;
+
+      e.preventDefault();
+
+      const r = Number(cell.dataset.row);
+      const c = Number(cell.dataset.col);
+      handleEdit(r, c);
     });
 
     renderAll();
