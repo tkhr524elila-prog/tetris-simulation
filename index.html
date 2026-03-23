@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>テトリス盤面シミュレーター</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --line: #d6dbe7;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --filled: #1f2937;
+      --ghost: rgba(59, 130, 246, 0.35);
+      --i: #22d3ee;
+      --o: #facc15;
+      --t: #c084fc;
+      --s: #4ade80;
+      --z: #f87171;
+      --j: #60a5fa;
+      --l: #fb923c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .lead {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #f8fafc;
+    }
+
+    button.active {
+      background: #111827;
+      color: white;
+      border-color: #111827;
+    }
+
+    .piece-preview {
+      display: inline-grid;
+      gap: 2px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .piece-row {
+      display: flex;
+      gap: 2px;
+    }
+
+    .piece-cell {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid #dbe2ee;
+      background: white;
+    }
+
+    .message {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .board-wrap {
+      overflow: auto;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(10, 28px);
+      gap: 2px;
+      padding: 10px;
+      border-radius: 16px;
+      background: #e9edf5;
+      width: fit-content;
+    }
+
+    .cell {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #cfd7e4;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .filled { background: var(--filled); }
+    .ghost { background: var(--ghost); }
+
+    .i { background: var(--i); }
+    .o { background: var(--o); }
+    .t { background: var(--t); }
+    .s { background: var(--s); }
+    .z { background: var(--z); }
+    .j { background: var(--j); }
+    .l { background: var(--l); }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+
+    .tips {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .tip {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .tips {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>テトリス盤面シミュレーター</h1>
+    <p class="lead">
+      盤面を直接編集し、落とすテトリミノと向きを選んで、
+      「この列に落としたらどうなるか」を繰り返し確認できます。
+    </p>
+
+    <div class="layout">
+      <div class="card">
+        <div class="section">
+          <div class="label">1. テトリミノ選択</div>
+          <div class="buttons" id="pieceButtons"></div>
+        </div>
+
+        <div class="section">
+          <div class="label">2. 向き</div>
+          <div class="buttons">
+            <button id="rotateBtn">回転</button>
+            <button id="fillModeBtn" class="active">埋める</button>
+            <button id="eraseModeBtn">消す</button>
+          </div>
+          <p class="message" id="rotationText">現在の向き: 0°</p>
+        </div>
+
+        <div class="section">
+          <div class="label">3. 現在ピース</div>
+          <div id="piecePreview"></div>
+        </div>
+
+        <div class="section">
+          <div class="label">4. 操作</div>
+          <div class="buttons">
+            <button id="undoBtn">Undo</button>
+            <button id="resetBtn">Reset</button>
+            <button id="copyBtn">盤面コピー</button>
+            <button id="loadBtn">盤面読み込み</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">5. 盤面データ</div>
+          <textarea id="boardText" placeholder="0000000000
+0000000000
+... 20行"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="message" id="message">
+          盤面を編集して、ピースを選び、盤面上で列にマウスを乗せると着地プレビュー、クリックで実際に落下します。
+        </p>
+
+        <div class="board-wrap">
+          <div class="board" id="board"></div>
+        </div>
+
+        <div class="tips">
+          <div class="tip">通常クリックで、その列にピースを落とします。</div>
+          <div class="tip">Shift + クリックで盤面を直接編集できます。</div>
+          <div class="tip">右クリックでも盤面の埋める・消すができます。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ROWS = 20;
+    const COLS = 10;
+
+    const PIECES = {
+      I: [[1,1,1,1]],
+      O: [[1,1],[1,1]],
+      T: [[0,1,0],[1,1,1]],
+      S: [[0,1,1],[1,1,0]],
+      Z: [[1,1,0],[0,1,1]],
+      J: [[1,0,0],[1,1,1]],
+      L: [[0,0,1],[1,1,1]]
+    };
+
+    const pieceClassMap = {
+      I: "i",
+      O: "o",
+      T: "t",
+      S: "s",
+      Z: "z",
+      J: "j",
+      L: "l"
+    };
+
+    let board = makeBoard();
+    let history = [];
+    let selectedPiece = "T";
+    let rotation = 0;
+    let editMode = "fill";
+    let hoverCol = null;
+
+    const boardEl = document.getElementById("board");
+    const pieceButtonsEl = document.getElementById("pieceButtons");
+    const piecePreviewEl = document.getElementById("piecePreview");
+    const rotationTextEl = document.getElementById("rotationText");
+    const messageEl = document.getElementById("message");
+    const boardTextEl = document.getElementById("boardText");
+    const rotateBtn = document.getElementById("rotateBtn");
+    const fillModeBtn = document.getElementById("fillModeBtn");
+    const eraseModeBtn = document.getElementById("eraseModeBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const loadBtn = document.getElementById("loadBtn");
+
+    function makeBoard() {
+      return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function copyBoard(src) {
+      return src.map(row => [...row]);
+    }
+
+    function rotateMatrix(matrix) {
+      return matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+    }
+
+    function normalizeTop(shape) {
+      while (shape.length && shape[0].every(v => v === 0)) shape = shape.slice(1);
+      return shape;
+    }
+
+    function normalizeLeft(shape) {
+      while (shape[0] && shape.every(row => row[0] === 0)) {
+        shape = shape.map(row => row.slice(1));
+      }
+      return shape;
+    }
+
+    function rotateNTimes(shape, n) {
+      let out = shape.map(r => [...r]);
+      for (let i = 0; i < n; i++) out = rotateMatrix(out);
+      out = normalizeTop(out);
+      out = normalizeLeft(out);
+      return out;
+    }
+
+    function currentShape() {
+      return rotateNTimes(PIECES[selectedPiece], rotation);
+    }
+
+    function pushHistory() {
+      history.push(copyBoard(board));
+      if (history.length > 100) history.shift();
+    }
+
+    function canPlace(targetBoard, shape, topRow, leftCol) {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          const br = topRow + r;
+          const bc = leftCol + c;
+
+          if (bc < 0 || bc >= COLS || br >= ROWS) return false;
+          if (br >= 0 && targetBoard[br][bc]) return false;
+        }
+      }
+      return true;
+    }
+
+    function findDropRow(targetBoard, shape, col) {
+      let row = -shape.length;
+      while (canPlace(targetBoard, shape, row + 1, col)) {
+        row++;
+      }
+      return canPlace(targetBoard, shape, row, col) ? row : null;
+    }
+
+    function mergePiece(targetBoard, shape, row, col, value) {
+      const next = copyBoard(targetBoard);
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          const br = row + r;
+          const bc = col + c;
+          if (br >= 0 && br < ROWS && bc >= 0 && bc < COLS) {
+            next[br][bc] = value;
+          }
+        }
+      }
+      return next;
+    }
+
+    function clearLines(targetBoard) {
+      const remain = targetBoard.filter(row => row.some(cell => cell === 0));
+      const cleared = ROWS - remain.length;
+      const top = Array.from({ length: cleared }, () => Array(COLS).fill(0));
+      return {
+        board: [...top, ...remain],
+        cleared
+      };
+    }
+
+    function boardToText(targetBoard) {
+      return targetBoard.map(row => row.join("")).join("\n");
+    }
+
+    function textToBoard(text) {
+      const lines = text.trim().split(/\n+/).map(v => v.trim());
+      if (lines.length !== ROWS) throw new Error(`${ROWS}行必要です`);
+      return lines.map(line => {
+        if (line.length !== COLS) throw new Error(`各行は${COLS}桁必要です`);
+        return [...line].map(ch => ch === "1" ? 1 : 0);
+      });
+    }
+
+    function setMessage(text) {
+      messageEl.textContent = text;
+    }
+
+    function renderPieceButtons() {
+      pieceButtonsEl.innerHTML = "";
+      Object.keys(PIECES).forEach(piece => {
+        const btn = document.createElement("button");
+        btn.textContent = piece;
+        if (piece === selectedPiece) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+          selectedPiece = piece;
+          renderAll();
+        });
+        pieceButtonsEl.appendChild(btn);
+      });
+    }
+
+    function renderPiecePreview() {
+      const shape = currentShape();
+      const wrap = document.createElement("div");
+      wrap.className = "piece-preview";
+
+      shape.forEach(row => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "piece-row";
+        row.forEach(cell => {
+          const cellEl = document.createElement("div");
+          cellEl.className = "piece-cell";
+          if (cell) cellEl.classList.add(pieceClassMap[selectedPiece]);
+          rowEl.appendChild(cellEl);
+        });
+        wrap.appendChild(rowEl);
+      });
+
+      piecePreviewEl.innerHTML = "";
+      piecePreviewEl.appendChild(wrap);
+      rotationTextEl.textContent = `現在の向き: ${rotation * 90}°`;
+    }
+
+    function handleEdit(r, c) {
+      pushHistory();
+      board[r][c] = editMode === "fill" ? 1 : 0;
+      renderAll();
+    }
+
+    function handleDrop(col) {
+      const shape = currentShape();
+      const row = findDropRow(board, shape, col);
+      if (row === null) {
+        setMessage("その列にはこの向きで置けません。");
+        return;
+      }
+
+      pushHistory();
+      const placed = mergePiece(board, shape, row, col, 2);
+      const result = clearLines(placed.map(row => row.map(v => v === 2 ? 1 : v)));
+      board = result.board;
+
+      if (result.cleared > 0) {
+        setMessage(`${selectedPiece} を落として ${result.cleared} ライン消去しました。`);
+      } else {
+        setMessage(`${selectedPiece} を落としました。`);
+      }
+
+      renderAll();
+    }
+
+    function previewBoard() {
+      if (hoverCol === null) return board;
+      const shape = currentShape();
+      const row = findDropRow(board, shape, hoverCol);
+      if (row === null) return board;
+      return mergePiece(board, shape, row, hoverCol, 2);
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      const shown = previewBoard();
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement("button");
+          cell.className = "cell";
+
+          if (shown[r][c] === 1) {
+            cell.classList.add("filled");
+          } else if (shown[r][c] === 2) {
+            cell.classList.add(pieceClassMap[selectedPiece]);
+          }
+
+          cell.addEventListener("mouseenter", () => {
+            hoverCol = c;
+            renderBoard();
+          });
+
+          cell.addEventListener("click", (e) => {
+            if (e.shiftKey) {
+              handleEdit(r, c);
+            } else {
+              handleDrop(c);
+            }
+          });
+
+          cell.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            handleEdit(r, c);
+          });
+
+          boardEl.appendChild(cell);
+        }
+      }
+
+      boardTextEl.value = boardToText(board);
+    }
+
+    function renderModeButtons() {
+      fillModeBtn.classList.toggle("active", editMode === "fill");
+      eraseModeBtn.classList.toggle("active", editMode === "erase");
+    }
+
+    function renderAll() {
+      renderPieceButtons();
+      renderPiecePreview();
+      renderModeButtons();
+      renderBoard();
+    }
+
+    rotateBtn.addEventListener("click", () => {
+      rotation = (rotation + 1) % 4;
+      renderAll();
+    });
+
+    fillModeBtn.addEventListener("click", () => {
+      editMode = "fill";
+      renderModeButtons();
+    });
+
+    eraseModeBtn.addEventListener("click", () => {
+      editMode = "erase";
+      renderModeButtons();
+    });
+
+    undoBtn.addEventListener("click", () => {
+      if (!history.length) return;
+      board = history.pop();
+      setMessage("1手戻しました。");
+      renderAll();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      pushHistory();
+      board = makeBoard();
+      setMessage("盤面をリセットしました。");
+      renderAll();
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      const text = boardToText(board);
+      boardTextEl.value = text;
+      try {
+        await navigator.clipboard.writeText(text);
+        setMessage("盤面データをコピーしました。");
+      } catch {
+        setMessage("盤面データをテキスト欄に出しました。手動でコピーしてください。");
+      }
+    });
+
+    loadBtn.addEventListener("click", () => {
+      try {
+        const parsed = textToBoard(boardTextEl.value);
+        pushHistory();
+        board = parsed;
+        setMessage("盤面を読み込みました。");
+        renderAll();
+      } catch (e) {
+        setMessage(`読み込み失敗: ${e.message}`);
+      }
+    });
+
+    boardEl.addEventListener("mouseleave", () => {
+      hoverCol = null;
+      renderBoard();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
