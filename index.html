@@ -11,7 +11,6 @@
       --line: #d6dbe7;
       --text: #1f2937;
       --muted: #6b7280;
-      --ghost: rgba(59, 130, 246, 0.28);
 
       --i: #22d3ee;
       --o: #facc15;
@@ -21,7 +20,7 @@
       --j: #60a5fa;
       --l: #fb923c;
 
-      --fixed: #1f2937;
+      --fixed: #4b5563;
       --cell: #ffffff;
       --boardBg: #e9edf5;
     }
@@ -175,14 +174,11 @@
       background: var(--cell);
       cursor: pointer;
       display: block;
+      transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
     }
 
     .filled-fixed {
       background: var(--fixed);
-    }
-
-    .ghost {
-      background: var(--ghost);
     }
 
     .i { background: var(--i); }
@@ -192,6 +188,61 @@
     .z { background: var(--z); }
     .j { background: var(--j); }
     .l { background: var(--l); }
+
+    .ghost-i { background: var(--i); opacity: 0.42; }
+    .ghost-o { background: var(--o); opacity: 0.42; }
+    .ghost-t { background: var(--t); opacity: 0.42; }
+    .ghost-s { background: var(--s); opacity: 0.42; }
+    .ghost-z { background: var(--z); opacity: 0.42; }
+    .ghost-j { background: var(--j); opacity: 0.42; }
+    .ghost-l { background: var(--l); opacity: 0.42; }
+
+    .clearing {
+      animation: clearFlash 260ms ease-in-out 2;
+      box-shadow: 0 0 14px rgba(255,255,255,0.95);
+      filter: brightness(2.2);
+      position: relative;
+      z-index: 2;
+    }
+
+    .dropping {
+      animation: dropBounce 220ms ease-out;
+    }
+
+    @keyframes clearFlash {
+      0% {
+        filter: brightness(1);
+        transform: scale(1);
+        opacity: 1;
+      }
+      35% {
+        filter: brightness(2.8);
+        transform: scale(1.06);
+        opacity: 1;
+      }
+      70% {
+        filter: brightness(1.5);
+        transform: scale(0.98);
+        opacity: 0.45;
+      }
+      100% {
+        filter: brightness(0.8);
+        transform: scale(0.92);
+        opacity: 0;
+      }
+    }
+
+    @keyframes dropBounce {
+      0% {
+        transform: translateY(-10px);
+      }
+      70% {
+        transform: translateY(2px);
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
 
     textarea {
       width: 100%;
@@ -323,9 +374,9 @@
         </div>
 
         <div class="tips">
-          <div class="tip">通常クリックで、その列にピースを実際に落とします。</div>
-          <div class="tip">1行すべて埋まると、その行は消えて上のブロックが落ちます。</div>
-          <div class="tip">Shift+クリック / 右クリックで盤面を直接編集できます。</div>
+          <div class="tip">自分で編集したマスはグレーで表示されます。</div>
+          <div class="tip">落としたテトリミノは、置いた後もその色のまま残ります。</div>
+          <div class="tip">これから置く位置は半透明でプレビューされます。</div>
         </div>
       </div>
     </div>
@@ -334,6 +385,8 @@
   <script>
     const ROWS = 20;
     const COLS = 10;
+    const CLEAR_ANIMATION_MS = 520;
+    const DROP_ANIMATION_MS = 220;
 
     const PIECES = {
       I: [[1, 1, 1, 1]],
@@ -355,6 +408,16 @@
       L: "l"
     };
 
+    const ghostClassMap = {
+      I: "ghost-i",
+      O: "ghost-o",
+      T: "ghost-t",
+      S: "ghost-s",
+      Z: "ghost-z",
+      J: "ghost-j",
+      L: "ghost-l"
+    };
+
     let board = makeBoard();
     let history = [];
     let selectedPiece = "T";
@@ -363,6 +426,9 @@
     let hoverCol = null;
     let totalClearedLines = 0;
     let moveCount = 0;
+    let isAnimating = false;
+    let clearingRows = [];
+    let isDropAnimating = false;
 
     const boardEl = document.getElementById("board");
     const pieceButtonsEl = document.getElementById("pieceButtons");
@@ -380,6 +446,10 @@
     const resetBtn = document.getElementById("resetBtn");
     const copyBtn = document.getElementById("copyBtn");
     const loadBtn = document.getElementById("loadBtn");
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
     function makeBoard() {
       return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
@@ -432,6 +502,10 @@
       }
     }
 
+    function isFilledCell(value) {
+      return value !== 0 && value !== null;
+    }
+
     function canPlace(targetBoard, shape, topRow, leftCol) {
       for (let r = 0; r < shape.length; r++) {
         for (let c = 0; c < shape[r].length; c++) {
@@ -441,7 +515,7 @@
           const bc = leftCol + c;
 
           if (bc < 0 || bc >= COLS || br >= ROWS) return false;
-          if (br >= 0 && targetBoard[br][bc] !== 0) return false;
+          if (br >= 0 && isFilledCell(targetBoard[br][bc])) return false;
         }
       }
       return true;
@@ -474,20 +548,26 @@
       return next;
     }
 
-    function clearLines(targetBoard) {
-      const remain = targetBoard.filter(row => row.some(cell => cell === 0));
-      const cleared = ROWS - remain.length;
-      const top = Array.from({ length: cleared }, () => Array(COLS).fill(0));
+    function getFullRows(targetBoard) {
+      const rows = [];
+      for (let r = 0; r < ROWS; r++) {
+        if (targetBoard[r].every(cell => isFilledCell(cell))) {
+          rows.push(r);
+        }
+      }
+      return rows;
+    }
 
-      return {
-        board: [...top, ...remain],
-        cleared
-      };
+    function clearSpecificRows(targetBoard, rowsToClear) {
+      const rowSet = new Set(rowsToClear);
+      const remain = targetBoard.filter((_, idx) => !rowSet.has(idx));
+      const top = Array.from({ length: rowsToClear.length }, () => Array(COLS).fill(0));
+      return [...top, ...remain];
     }
 
     function boardToText(targetBoard) {
       return targetBoard
-        .map(row => row.map(v => (v ? 1 : 0)).join(""))
+        .map(row => row.map(v => (isFilledCell(v) ? 1 : 0)).join(""))
         .join("\n");
     }
 
@@ -500,7 +580,7 @@
 
       return lines.map(line => {
         if (line.length !== COLS) throw new Error(`各行は${COLS}桁必要です`);
-        return [...line].map(ch => (ch === "1" ? 1 : 0));
+        return [...line].map(ch => (ch === "1" ? -1 : 0));
       });
     }
 
@@ -521,6 +601,7 @@
         }
 
         btn.addEventListener("click", () => {
+          if (isAnimating) return;
           selectedPiece = piece;
           renderAll();
         });
@@ -556,12 +637,15 @@
     }
 
     function handleEdit(r, c) {
+      if (isAnimating) return;
       pushHistory();
-      board[r][c] = editMode === "fill" ? 1 : 0;
+      board[r][c] = editMode === "fill" ? -1 : 0;
       renderBoard();
     }
 
-    function handleDrop(col) {
+    async function handleDrop(col) {
+      if (isAnimating) return;
+
       const shape = currentShape();
       const row = findDropRow(board, shape, col);
 
@@ -572,30 +656,59 @@
 
       pushHistory();
 
-      board = mergePiece(board, shape, row, col, 1);
-      const result = clearLines(board);
-      board = result.board;
-
+      board = mergePiece(board, shape, row, col, selectedPiece);
       moveCount += 1;
-      totalClearedLines += result.cleared;
 
-      if (result.cleared > 0) {
-        setMessage(`${selectedPiece} を落として ${result.cleared} ライン消去しました。`);
-      } else {
+      const fullRows = getFullRows(board);
+
+      if (fullRows.length === 0) {
         setMessage(`${selectedPiece} を落としました。`);
+        renderBoard();
+        return;
       }
 
+      isAnimating = true;
+      clearingRows = fullRows;
+      setMessage(`${selectedPiece} を落として ${fullRows.length} ライン消去します。`);
+      renderBoard();
+
+      await sleep(CLEAR_ANIMATION_MS);
+
+      board = clearSpecificRows(board, fullRows);
+      totalClearedLines += fullRows.length;
+      clearingRows = [];
+      isDropAnimating = true;
+      setMessage(`${fullRows.length} ライン消去しました。`);
+      renderBoard();
+
+      await sleep(DROP_ANIMATION_MS);
+
+      isDropAnimating = false;
+      isAnimating = false;
       renderBoard();
     }
 
     function getPreviewBoard() {
-      if (hoverCol === null) return board;
+      if (hoverCol === null || isAnimating) return board;
 
       const shape = currentShape();
       const row = findDropRow(board, shape, hoverCol);
 
       if (row === null) return board;
-      return mergePiece(board, shape, row, hoverCol, 2);
+      return mergePiece(board, shape, row, hoverCol, `ghost-${selectedPiece}`);
+    }
+
+    function getCellClass(value) {
+      if (value === 0 || value === null) return "";
+      if (value === -1) return "filled-fixed";
+      if (typeof value === "string" && value.startsWith("ghost-")) {
+        const piece = value.replace("ghost-", "");
+        return ghostClassMap[piece] || "";
+      }
+      if (typeof value === "string") {
+        return pieceClassMap[value] || "";
+      }
+      return "";
     }
 
     function renderBoard() {
@@ -609,10 +722,17 @@
           cell.dataset.row = String(r);
           cell.dataset.col = String(c);
 
-          if (shown[r][c] === 1) {
-            cell.classList.add("filled-fixed");
-          } else if (shown[r][c] === 2) {
-            cell.classList.add(pieceClassMap[selectedPiece]);
+          const className = getCellClass(shown[r][c]);
+          if (className) {
+            cell.classList.add(className);
+          }
+
+          if (clearingRows.includes(r) && isFilledCell(shown[r][c])) {
+            cell.classList.add("clearing");
+          }
+
+          if (isDropAnimating && isFilledCell(shown[r][c])) {
+            cell.classList.add("dropping");
           }
 
           boardEl.appendChild(cell);
@@ -637,40 +757,49 @@
     }
 
     rotateBtn.addEventListener("click", () => {
+      if (isAnimating) return;
       rotation = (rotation + 1) % 4;
       renderAll();
     });
 
     fillModeBtn.addEventListener("click", () => {
+      if (isAnimating) return;
       editMode = "fill";
       renderModeButtons();
-      setMessage("埋めるモードです。Shift+クリックか右クリックで編集できます。");
+      setMessage("埋めるモードです。Shift+クリックか右クリックでグレーの補助ブロックを置けます。");
     });
 
     eraseModeBtn.addEventListener("click", () => {
+      if (isAnimating) return;
       editMode = "erase";
       renderModeButtons();
-      setMessage("消すモードです。Shift+クリックか右クリックで編集できます。");
+      setMessage("消すモードです。Shift+クリックか右クリックで補助ブロックを消せます。");
     });
 
     undoBtn.addEventListener("click", () => {
-      if (!history.length) return;
+      if (isAnimating || !history.length) return;
 
       const prev = history.pop();
       board = prev.board;
       totalClearedLines = prev.totalClearedLines;
       moveCount = prev.moveCount;
+      hoverCol = null;
+      clearingRows = [];
+      isDropAnimating = false;
 
       setMessage("1手戻しました。");
       renderBoard();
     });
 
     resetBtn.addEventListener("click", () => {
+      if (isAnimating) return;
       pushHistory();
       board = makeBoard();
       totalClearedLines = 0;
       moveCount = 0;
       hoverCol = null;
+      clearingRows = [];
+      isDropAnimating = false;
 
       setMessage("盤面をリセットしました。");
       renderBoard();
@@ -689,12 +818,15 @@
     });
 
     loadBtn.addEventListener("click", () => {
+      if (isAnimating) return;
       try {
         const parsed = textToBoard(boardTextEl.value);
         pushHistory();
         board = parsed;
         hoverCol = null;
-        setMessage("盤面を読み込みました。");
+        clearingRows = [];
+        isDropAnimating = false;
+        setMessage("盤面を読み込みました。読み込んだブロックはグレー扱いです。");
         renderBoard();
       } catch (e) {
         setMessage(`読み込み失敗: ${e.message}`);
@@ -702,6 +834,7 @@
     });
 
     boardEl.addEventListener("mousemove", (e) => {
+      if (isAnimating) return;
       const cell = e.target.closest(".cell");
       if (!cell) return;
 
@@ -713,11 +846,12 @@
     });
 
     boardEl.addEventListener("mouseleave", () => {
+      if (isAnimating) return;
       hoverCol = null;
       renderBoard();
     });
 
-    boardEl.addEventListener("click", (e) => {
+    boardEl.addEventListener("click", async (e) => {
       const cell = e.target.closest(".cell");
       if (!cell) return;
 
@@ -727,7 +861,7 @@
       if (e.shiftKey) {
         handleEdit(r, c);
       } else {
-        handleDrop(c);
+        await handleDrop(c);
       }
     });
 
