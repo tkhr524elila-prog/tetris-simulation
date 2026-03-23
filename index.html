@@ -20,7 +20,7 @@
       --j: #60a5fa;
       --l: #fb923c;
 
-      --fixed: #6b7280;
+      --manual: #6b7280;
       --cell: #ffffff;
       --boardBg: #e9edf5;
       --gridLine: #cfd7e4;
@@ -179,7 +179,7 @@
     }
 
     .manual {
-      background: var(--fixed);
+      background: var(--manual);
     }
 
     .i { background: var(--i); }
@@ -321,16 +321,15 @@
         </div>
 
         <div class="section">
-          <div class="label">2. 向き / 編集</div>
+          <div class="label">2. 向き</div>
           <div class="buttons">
             <button id="rotateBtn" type="button">回転</button>
-            <button id="fillModeBtn" type="button" class="active">グレー設置</button>
           </div>
           <p class="message" id="rotationText">現在の向き: 0°</p>
           <div class="small">
-            通常クリック: ピースを落とす<br />
-            Shift+クリック: グレーの補助ブロックを置く<br />
-            右クリック: そのマスを消す
+            左クリック: ピースを落とす<br />
+            右クリック: そのマスをグレーで塗る<br />
+            Shift+左クリック / Shift+右クリック: そのマスを消す
           </div>
         </div>
 
@@ -384,7 +383,7 @@
         </div>
 
         <p class="message" id="message">
-          列にマウスを乗せると着地プレビュー、クリックで実際に落下します。
+          列にマウスを乗せると着地プレビュー、左クリックで実際に落下します。
         </p>
 
         <div class="board-wrap">
@@ -392,7 +391,7 @@
         </div>
 
         <div class="tips">
-          <div class="tip">グレーは手動で置いた補助ブロックです。</div>
+          <div class="tip">右クリックで1マスずつ盤面を作れます。</div>
           <div class="tip">落としたテトリミノは、その色のまま固定されます。</div>
           <div class="tip">プレビューは白塗り・色枠で表示されます。</div>
         </div>
@@ -463,7 +462,6 @@
     const resetBtn = document.getElementById("resetBtn");
     const copyBtn = document.getElementById("copyBtn");
     const loadBtn = document.getElementById("loadBtn");
-    const fillModeBtn = document.getElementById("fillModeBtn");
 
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -652,11 +650,11 @@
       rotationTextEl.textContent = `現在の向き: ${rotation * 90}°`;
     }
 
-    function placeManualCell(r, c) {
+    function paintManualCell(r, c) {
       if (isAnimating) return;
       pushHistory();
       board[r][c] = MANUAL;
-      setMessage("グレーの補助ブロックを置きました。");
+      setMessage("そのマスをグレーで塗りました。");
       renderBoard();
     }
 
@@ -782,10 +780,6 @@
       renderAll();
     });
 
-    fillModeBtn.addEventListener("click", () => {
-      setMessage("Shift+クリックでグレーの補助ブロックを置けます。右クリックではそのマスを消せます。");
-    });
-
     undoBtn.addEventListener("click", () => {
       if (isAnimating || !history.length) return;
 
@@ -869,7 +863,7 @@
       const c = Number(cell.dataset.col);
 
       if (e.shiftKey) {
-        placeManualCell(r, c);
+        eraseCell(r, c);
       } else {
         await handleDrop(c);
       }
@@ -883,7 +877,12 @@
 
       const r = Number(cell.dataset.row);
       const c = Number(cell.dataset.col);
-      eraseCell(r, c);
+
+      if (e.shiftKey) {
+        eraseCell(r, c);
+      } else {
+        paintManualCell(r, c);
+      }
     });
 
     renderAll();
