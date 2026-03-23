@@ -20,9 +20,10 @@
       --j: #60a5fa;
       --l: #fb923c;
 
-      --fixed: #4b5563;
+      --fixed: #6b7280;
       --cell: #ffffff;
       --boardBg: #e9edf5;
+      --gridLine: #cfd7e4;
     }
 
     * {
@@ -169,7 +170,7 @@
     .cell {
       width: 28px;
       height: 28px;
-      border: 1px solid #cfd7e4;
+      border: 1px solid var(--gridLine);
       border-radius: 4px;
       background: var(--cell);
       cursor: pointer;
@@ -177,7 +178,7 @@
       transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
     }
 
-    .filled-fixed {
+    .manual {
       background: var(--fixed);
     }
 
@@ -189,18 +190,32 @@
     .j { background: var(--j); }
     .l { background: var(--l); }
 
-    .ghost-i { background: var(--i); opacity: 0.42; }
-    .ghost-o { background: var(--o); opacity: 0.42; }
-    .ghost-t { background: var(--t); opacity: 0.42; }
-    .ghost-s { background: var(--s); opacity: 0.42; }
-    .ghost-z { background: var(--z); opacity: 0.42; }
-    .ghost-j { background: var(--j); opacity: 0.42; }
-    .ghost-l { background: var(--l); opacity: 0.42; }
+    .ghost-i,
+    .ghost-o,
+    .ghost-t,
+    .ghost-s,
+    .ghost-z,
+    .ghost-j,
+    .ghost-l {
+      background: #ffffff;
+      opacity: 1;
+      border-width: 3px;
+      box-sizing: border-box;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+    }
+
+    .ghost-i { border-color: var(--i); }
+    .ghost-o { border-color: var(--o); }
+    .ghost-t { border-color: var(--t); }
+    .ghost-s { border-color: var(--s); }
+    .ghost-z { border-color: var(--z); }
+    .ghost-j { border-color: var(--j); }
+    .ghost-l { border-color: var(--l); }
 
     .clearing {
       animation: clearFlash 260ms ease-in-out 2;
-      box-shadow: 0 0 14px rgba(255,255,255,0.95);
-      filter: brightness(2.2);
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.95);
+      filter: brightness(2.25);
       position: relative;
       z-index: 2;
     }
@@ -276,7 +291,7 @@
       font-size: 12px;
       color: var(--muted);
       margin-top: 8px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     @media (max-width: 900px) {
@@ -309,10 +324,14 @@
           <div class="label">2. 向き / 編集</div>
           <div class="buttons">
             <button id="rotateBtn" type="button">回転</button>
-            <button id="fillModeBtn" type="button" class="active">埋める</button>
-            <button id="eraseModeBtn" type="button">消す</button>
+            <button id="fillModeBtn" type="button" class="active">グレー設置</button>
           </div>
           <p class="message" id="rotationText">現在の向き: 0°</p>
+          <div class="small">
+            通常クリック: ピースを落とす<br />
+            Shift+クリック: グレーの補助ブロックを置く<br />
+            右クリック: そのマスを消す
+          </div>
         </div>
 
         <div class="section">
@@ -327,10 +346,6 @@
             <button id="resetBtn" type="button">Reset</button>
             <button id="copyBtn" type="button">盤面コピー</button>
             <button id="loadBtn" type="button">盤面読み込み</button>
-          </div>
-          <div class="small">
-            通常クリック: ピースを落とす<br />
-            Shift+クリック / 右クリック: 盤面を直接編集
           </div>
         </div>
 
@@ -356,6 +371,9 @@
 0000000000
 0000000000
 0000000000"></textarea>
+          <div class="small">
+            読み込んだ 1 はグレーの補助ブロックとして扱います。
+          </div>
         </div>
       </div>
 
@@ -374,9 +392,9 @@
         </div>
 
         <div class="tips">
-          <div class="tip">自分で編集したマスはグレーで表示されます。</div>
-          <div class="tip">落としたテトリミノは、置いた後もその色のまま残ります。</div>
-          <div class="tip">これから置く位置は半透明でプレビューされます。</div>
+          <div class="tip">グレーは手動で置いた補助ブロックです。</div>
+          <div class="tip">落としたテトリミノは、その色のまま固定されます。</div>
+          <div class="tip">プレビューは白塗り・色枠で表示されます。</div>
         </div>
       </div>
     </div>
@@ -418,11 +436,12 @@
       L: "ghost-l"
     };
 
+    const MANUAL = "manual";
+
     let board = makeBoard();
     let history = [];
     let selectedPiece = "T";
     let rotation = 0;
-    let editMode = "fill";
     let hoverCol = null;
     let totalClearedLines = 0;
     let moveCount = 0;
@@ -440,12 +459,11 @@
     const moveCountEl = document.getElementById("moveCount");
 
     const rotateBtn = document.getElementById("rotateBtn");
-    const fillModeBtn = document.getElementById("fillModeBtn");
-    const eraseModeBtn = document.getElementById("eraseModeBtn");
     const undoBtn = document.getElementById("undoBtn");
     const resetBtn = document.getElementById("resetBtn");
     const copyBtn = document.getElementById("copyBtn");
     const loadBtn = document.getElementById("loadBtn");
+    const fillModeBtn = document.getElementById("fillModeBtn");
 
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -497,9 +515,7 @@
         totalClearedLines,
         moveCount
       });
-      if (history.length > 100) {
-        history.shift();
-      }
+      if (history.length > 100) history.shift();
     }
 
     function isFilledCell(value) {
@@ -580,7 +596,7 @@
 
       return lines.map(line => {
         if (line.length !== COLS) throw new Error(`各行は${COLS}桁必要です`);
-        return [...line].map(ch => (ch === "1" ? -1 : 0));
+        return [...line].map(ch => (ch === "1" ? MANUAL : 0));
       });
     }
 
@@ -636,10 +652,20 @@
       rotationTextEl.textContent = `現在の向き: ${rotation * 90}°`;
     }
 
-    function handleEdit(r, c) {
+    function placeManualCell(r, c) {
       if (isAnimating) return;
       pushHistory();
-      board[r][c] = editMode === "fill" ? -1 : 0;
+      board[r][c] = MANUAL;
+      setMessage("グレーの補助ブロックを置きました。");
+      renderBoard();
+    }
+
+    function eraseCell(r, c) {
+      if (isAnimating) return;
+      if (!isFilledCell(board[r][c])) return;
+      pushHistory();
+      board[r][c] = 0;
+      setMessage("そのマスを消しました。");
       renderBoard();
     }
 
@@ -700,7 +726,7 @@
 
     function getCellClass(value) {
       if (value === 0 || value === null) return "";
-      if (value === -1) return "filled-fixed";
+      if (value === MANUAL) return "manual";
       if (typeof value === "string" && value.startsWith("ghost-")) {
         const piece = value.replace("ghost-", "");
         return ghostClassMap[piece] || "";
@@ -744,15 +770,9 @@
       moveCountEl.textContent = String(moveCount);
     }
 
-    function renderModeButtons() {
-      fillModeBtn.classList.toggle("active", editMode === "fill");
-      eraseModeBtn.classList.toggle("active", editMode === "erase");
-    }
-
     function renderAll() {
       renderPieceButtons();
       renderPiecePreview();
-      renderModeButtons();
       renderBoard();
     }
 
@@ -763,17 +783,7 @@
     });
 
     fillModeBtn.addEventListener("click", () => {
-      if (isAnimating) return;
-      editMode = "fill";
-      renderModeButtons();
-      setMessage("埋めるモードです。Shift+クリックか右クリックでグレーの補助ブロックを置けます。");
-    });
-
-    eraseModeBtn.addEventListener("click", () => {
-      if (isAnimating) return;
-      editMode = "erase";
-      renderModeButtons();
-      setMessage("消すモードです。Shift+クリックか右クリックで補助ブロックを消せます。");
+      setMessage("Shift+クリックでグレーの補助ブロックを置けます。右クリックではそのマスを消せます。");
     });
 
     undoBtn.addEventListener("click", () => {
@@ -826,7 +836,7 @@
         hoverCol = null;
         clearingRows = [];
         isDropAnimating = false;
-        setMessage("盤面を読み込みました。読み込んだブロックはグレー扱いです。");
+        setMessage("盤面を読み込みました。読み込んだブロックはグレーです。");
         renderBoard();
       } catch (e) {
         setMessage(`読み込み失敗: ${e.message}`);
@@ -859,7 +869,7 @@
       const c = Number(cell.dataset.col);
 
       if (e.shiftKey) {
-        handleEdit(r, c);
+        placeManualCell(r, c);
       } else {
         await handleDrop(c);
       }
@@ -873,7 +883,7 @@
 
       const r = Number(cell.dataset.row);
       const c = Number(cell.dataset.col);
-      handleEdit(r, c);
+      eraseCell(r, c);
     });
 
     renderAll();
