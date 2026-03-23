@@ -43,7 +43,7 @@
     }
 
     body {
-      padding-bottom: max(96px, env(safe-area-inset-bottom));
+      padding-bottom: max(170px, env(safe-area-inset-bottom));
     }
 
     .wrap {
@@ -234,26 +234,10 @@
     }
 
     @keyframes clearFlash {
-      0% {
-        filter: brightness(1);
-        transform: scale(1);
-        opacity: 1;
-      }
-      35% {
-        filter: brightness(2.8);
-        transform: scale(1.06);
-        opacity: 1;
-      }
-      70% {
-        filter: brightness(1.5);
-        transform: scale(0.98);
-        opacity: 0.45;
-      }
-      100% {
-        filter: brightness(0.8);
-        transform: scale(0.92);
-        opacity: 0;
-      }
+      0% { filter: brightness(1); transform: scale(1); opacity: 1; }
+      35% { filter: brightness(2.8); transform: scale(1.06); opacity: 1; }
+      70% { filter: brightness(1.5); transform: scale(0.98); opacity: 0.45; }
+      100% { filter: brightness(0.8); transform: scale(0.92); opacity: 0; }
     }
 
     @keyframes dropBounce {
@@ -297,8 +281,67 @@
       line-height: 1.6;
     }
 
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
     .mobile-toolbar {
-      display: none;
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      display: grid;
+      gap: 8px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 10px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+
+    .toolbar-section {
+      display: grid;
+      gap: 8px;
+    }
+
+    .toolbar-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .toolbar-row.row-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .toolbar-row.row-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .toolbar-row.row-7 {
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .toolbar-row button {
+      min-height: 46px;
+      font-size: 13px;
+      padding: 10px 8px;
+    }
+
+    .piece-mini {
+      font-weight: 700;
     }
 
     @media (max-width: 900px) {
@@ -313,28 +356,11 @@
       .tips {
         grid-template-columns: 1fr;
       }
+    }
 
-      .mobile-toolbar {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        bottom: max(12px, env(safe-area-inset-bottom));
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        background: rgba(255,255,255,0.96);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 8px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
-        backdrop-filter: blur(10px);
-        z-index: 100;
-      }
-
-      .mobile-toolbar button {
-        min-height: 46px;
-        font-size: 13px;
-        padding: 10px 8px;
+    @media (min-width: 901px) {
+      body {
+        padding-bottom: 130px;
       }
     }
   </style>
@@ -343,36 +369,29 @@
   <div class="wrap">
     <h1>テトリス盤面シミュレーター</h1>
     <p class="lead">
-      iPhoneでは下のモード切替を使って、タップで盤面編集や落下ができます。
-      PCでは左クリックで落下、右クリックでグレー設置も使えます。
+      下の固定操作バーで、ピース選択・左右移動・回転・落下まで完結できます。
+      盤面上には常に「今どこに落ちるか」のゴーストを表示します。
     </p>
 
     <div class="layout">
       <div class="card">
         <div class="section">
-          <div class="label">1. テトリミノ選択</div>
-          <div class="buttons" id="pieceButtons"></div>
-        </div>
-
-        <div class="section">
-          <div class="label">2. 向き</div>
-          <div class="buttons">
-            <button id="rotateBtn" type="button">回転</button>
-          </div>
-          <p class="message" id="rotationText">現在の向き: 0°</p>
-          <div class="small">
-            PC: 左クリックで落下 / 右クリックでグレー設置 / Shift+クリックで消去<br />
-            iPhone: 下のモードを切り替えてタップ操作
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="label">3. 現在ピース</div>
+          <div class="label">現在のピース</div>
           <div id="piecePreview"></div>
+          <div class="small" id="rotationText">現在の向き: 0°</div>
         </div>
 
         <div class="section">
-          <div class="label">4. 操作</div>
+          <div class="label">状態</div>
+          <div class="control-row">
+            <div class="pill">ピース: <strong id="currentPieceLabel">T</strong></div>
+            <div class="pill">列: <strong id="currentColLabel">4</strong></div>
+            <div class="pill">モード: <strong id="modeLabel">落下</strong></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">操作</div>
           <div class="buttons">
             <button id="undoBtn" type="button">Undo</button>
             <button id="resetBtn" type="button">Reset</button>
@@ -382,7 +401,7 @@
         </div>
 
         <div class="section">
-          <div class="label">5. 盤面データ</div>
+          <div class="label">盤面データ</div>
           <textarea id="boardText" placeholder="0000000000
 0000000000
 0000000000
@@ -413,11 +432,10 @@
         <div class="status">
           <div>消去ライン数: <strong id="linesCount">0</strong></div>
           <div>操作回数: <strong id="moveCount">0</strong></div>
-          <div>モード: <strong id="modeLabel">落下</strong></div>
         </div>
 
         <p class="message" id="message">
-          タップまたはクリックで操作できます。iPhoneでは下のモード切替が便利です。
+          左右移動・回転をした結果が盤面上の白枠ゴーストに常時表示されます。
         </p>
 
         <div class="board-wrap">
@@ -425,18 +443,35 @@
         </div>
 
         <div class="tips">
-          <div class="tip">手動設置した補助ブロックはグレーです。</div>
-          <div class="tip">落としたピースはその色のまま固定されます。</div>
-          <div class="tip">プレビューは白塗り・色枠で表示されます。</div>
+          <div class="tip">落下モードでは、盤面上に常時ゴーストを表示します。</div>
+          <div class="tip">グレー設置モードでは、盤面タップで1マスずつ補助ブロックを置けます。</div>
+          <div class="tip">消すモードでは、盤面タップで1マスずつ消せます。</div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="mobile-toolbar">
-    <button id="modeDropBtn" type="button" class="active">落下</button>
-    <button id="modePaintBtn" type="button">グレー設置</button>
-    <button id="modeEraseBtn" type="button">消す</button>
+    <div class="toolbar-section">
+      <div class="toolbar-row row-3">
+        <button id="modeDropBtn" type="button" class="active">落下</button>
+        <button id="modePaintBtn" type="button">グレー設置</button>
+        <button id="modeEraseBtn" type="button">消す</button>
+      </div>
+    </div>
+
+    <div class="toolbar-section">
+      <div class="toolbar-row row-4">
+        <button id="moveLeftBtn" type="button">←</button>
+        <button id="rotateBtn" type="button">回転</button>
+        <button id="moveRightBtn" type="button">→</button>
+        <button id="dropBtn" type="button">落下</button>
+      </div>
+    </div>
+
+    <div class="toolbar-section">
+      <div class="toolbar-row row-7" id="pieceButtons"></div>
+    </div>
   </div>
 
   <script>
@@ -481,7 +516,7 @@
     let history = [];
     let selectedPiece = "T";
     let rotation = 0;
-    let hoverCol = null;
+    let currentCol = 3;
     let totalClearedLines = 0;
     let moveCount = 0;
     let isAnimating = false;
@@ -498,8 +533,13 @@
     const linesCountEl = document.getElementById("linesCount");
     const moveCountEl = document.getElementById("moveCount");
     const modeLabelEl = document.getElementById("modeLabel");
+    const currentPieceLabel = document.getElementById("currentPieceLabel");
+    const currentColLabel = document.getElementById("currentColLabel");
 
     const rotateBtn = document.getElementById("rotateBtn");
+    const moveLeftBtn = document.getElementById("moveLeftBtn");
+    const moveRightBtn = document.getElementById("moveRightBtn");
+    const dropBtn = document.getElementById("dropBtn");
     const undoBtn = document.getElementById("undoBtn");
     const resetBtn = document.getElementById("resetBtn");
     const copyBtn = document.getElementById("copyBtn");
@@ -526,9 +566,7 @@
     }
 
     function normalizeTop(shape) {
-      while (shape.length && shape[0].every(v => v === 0)) {
-        shape = shape.slice(1);
-      }
+      while (shape.length && shape[0].every(v => v === 0)) shape = shape.slice(1);
       return shape;
     }
 
@@ -551,11 +589,25 @@
       return rotateNTimes(PIECES[selectedPiece], rotation);
     }
 
+    function getMaxColForShape(shape) {
+      return COLS - shape[0].length;
+    }
+
+    function clampCurrentCol() {
+      const shape = currentShape();
+      const maxCol = getMaxColForShape(shape);
+      if (currentCol < 0) currentCol = 0;
+      if (currentCol > maxCol) currentCol = maxCol;
+    }
+
     function pushHistory() {
       history.push({
         board: copyBoard(board),
         totalClearedLines,
-        moveCount
+        moveCount,
+        selectedPiece,
+        rotation,
+        currentCol
       });
       if (history.length > 100) history.shift();
     }
@@ -646,12 +698,14 @@
       modeLabelEl.textContent = labels[mode];
 
       if (mode === "drop") {
-        setMessage("落下モードです。タップした列にピースを落とします。");
+        setMessage("落下モードです。左右移動・回転で位置を決めて、落下を押してください。");
       } else if (mode === "paint") {
-        setMessage("グレー設置モードです。タップしたマスをグレーで埋めます。");
+        setMessage("グレー設置モードです。盤面タップで1マス置けます。");
       } else {
-        setMessage("消去モードです。タップしたマスを消します。");
+        setMessage("消去モードです。盤面タップで1マス消せます。");
       }
+
+      renderBoard();
     }
 
     function renderPieceButtons() {
@@ -660,10 +714,13 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = piece;
+        btn.classList.add("piece-mini");
         if (piece === selectedPiece) btn.classList.add("active");
         btn.addEventListener("click", () => {
           if (isAnimating) return;
           selectedPiece = piece;
+          rotation = 0;
+          clampCurrentCol();
           renderAll();
         });
         pieceButtonsEl.appendChild(btn);
@@ -690,6 +747,8 @@
       piecePreviewEl.innerHTML = "";
       piecePreviewEl.appendChild(wrap);
       rotationTextEl.textContent = `現在の向き: ${rotation * 90}°`;
+      currentPieceLabel.textContent = selectedPiece;
+      currentColLabel.textContent = String(currentCol + 1);
     }
 
     function paintManualCell(r, c) {
@@ -709,19 +768,20 @@
       renderBoard();
     }
 
-    async function handleDrop(col) {
+    async function handleDrop() {
       if (isAnimating) return;
 
+      clampCurrentCol();
       const shape = currentShape();
-      const row = findDropRow(board, shape, col);
+      const row = findDropRow(board, shape, currentCol);
 
       if (row === null) {
-        setMessage("その列にはこの向きで置けません。");
+        setMessage("この位置にはこの向きで置けません。左右移動か回転を試してください。");
         return;
       }
 
       pushHistory();
-      board = mergePiece(board, shape, row, col, selectedPiece);
+      board = mergePiece(board, shape, row, currentCol, selectedPiece);
       moveCount += 1;
 
       const fullRows = getFullRows(board);
@@ -753,11 +813,13 @@
     }
 
     function getPreviewBoard() {
-      if (hoverCol === null || isAnimating || currentMode !== "drop") return board;
+      if (isAnimating || currentMode !== "drop") return board;
+
+      clampCurrentCol();
       const shape = currentShape();
-      const row = findDropRow(board, shape, hoverCol);
+      const row = findDropRow(board, shape, currentCol);
       if (row === null) return board;
-      return mergePiece(board, shape, row, hoverCol, `ghost-${selectedPiece}`);
+      return mergePiece(board, shape, row, currentCol, `ghost-${selectedPiece}`);
     }
 
     function getCellClass(value) {
@@ -799,31 +861,36 @@
       boardTextEl.value = boardToText(board);
       linesCountEl.textContent = String(totalClearedLines);
       moveCountEl.textContent = String(moveCount);
+      currentColLabel.textContent = String(currentCol + 1);
     }
 
     function renderAll() {
+      clampCurrentCol();
       renderPieceButtons();
       renderPiecePreview();
       renderBoard();
     }
 
-    async function handleCellAction(r, c) {
-      if (currentMode === "paint") {
-        paintManualCell(r, c);
-      } else if (currentMode === "erase") {
-        eraseCell(r, c);
-      } else {
-        hoverCol = c;
-        renderBoard();
-        await handleDrop(c);
-      }
+    function movePiece(delta) {
+      if (isAnimating || currentMode !== "drop") return;
+      const shape = currentShape();
+      const next = currentCol + delta;
+      const maxCol = COLS - shape[0].length;
+      currentCol = Math.max(0, Math.min(maxCol, next));
+      renderAll();
     }
 
-    rotateBtn.addEventListener("click", () => {
-      if (isAnimating) return;
+    function rotatePiece() {
+      if (isAnimating || currentMode !== "drop") return;
       rotation = (rotation + 1) % 4;
+      clampCurrentCol();
       renderAll();
-    });
+    }
+
+    rotateBtn.addEventListener("click", rotatePiece);
+    moveLeftBtn.addEventListener("click", () => movePiece(-1));
+    moveRightBtn.addEventListener("click", () => movePiece(1));
+    dropBtn.addEventListener("click", handleDrop);
 
     undoBtn.addEventListener("click", () => {
       if (isAnimating || !history.length) return;
@@ -831,11 +898,13 @@
       board = prev.board;
       totalClearedLines = prev.totalClearedLines;
       moveCount = prev.moveCount;
-      hoverCol = null;
+      selectedPiece = prev.selectedPiece;
+      rotation = prev.rotation;
+      currentCol = prev.currentCol;
       clearingRows = [];
       isDropAnimating = false;
       setMessage("1手戻しました。");
-      renderBoard();
+      renderAll();
     });
 
     resetBtn.addEventListener("click", () => {
@@ -844,11 +913,11 @@
       board = makeBoard();
       totalClearedLines = 0;
       moveCount = 0;
-      hoverCol = null;
       clearingRows = [];
       isDropAnimating = false;
+      currentCol = 3;
       setMessage("盤面をリセットしました。");
-      renderBoard();
+      renderAll();
     });
 
     copyBtn.addEventListener("click", async () => {
@@ -868,11 +937,11 @@
         const parsed = textToBoard(boardTextEl.value);
         pushHistory();
         board = parsed;
-        hoverCol = null;
         clearingRows = [];
         isDropAnimating = false;
+        currentCol = 3;
         setMessage("盤面を読み込みました。読み込んだブロックはグレーです。");
-        renderBoard();
+        renderAll();
       } catch (e) {
         setMessage(`読み込み失敗: ${e.message}`);
       }
@@ -887,16 +956,9 @@
       const cell = e.target.closest(".cell");
       if (!cell) return;
       const col = Number(cell.dataset.col);
-      if (hoverCol !== col) {
-        hoverCol = col;
-        renderBoard();
-      }
-    });
-
-    boardEl.addEventListener("mouseleave", () => {
-      if (isAnimating) return;
-      hoverCol = null;
-      renderBoard();
+      currentCol = col;
+      clampCurrentCol();
+      renderAll();
     });
 
     boardEl.addEventListener("click", async (e) => {
@@ -906,18 +968,20 @@
       const r = Number(cell.dataset.row);
       const c = Number(cell.dataset.col);
 
-      if (e.shiftKey) {
+      if (currentMode === "paint") {
+        paintManualCell(r, c);
+      } else if (currentMode === "erase") {
         eraseCell(r, c);
-        return;
+      } else {
+        currentCol = c;
+        clampCurrentCol();
+        renderAll();
       }
-
-      await handleCellAction(r, c);
     });
 
     boardEl.addEventListener("contextmenu", (e) => {
       const cell = e.target.closest(".cell");
       if (!cell) return;
-
       e.preventDefault();
 
       const r = Number(cell.dataset.row);
